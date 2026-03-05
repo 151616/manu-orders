@@ -1,5 +1,8 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { OrderCategory, OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -28,6 +31,8 @@ type ListOrdersInput = {
   status?: OrderStatus | "ALL" | null;
   category?: OrderCategory | "ALL" | null;
 };
+
+type OrderListRedirectTarget = "queue" | "trash";
 
 type ActivityDiff = {
   field: string;
@@ -96,6 +101,15 @@ const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
   "notesFromManu",
 ] as const;
 
+const ORDER_ATTACHMENT_ALLOWED_FIELDS = ["attachment"] as const;
+const ORDER_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+const ORDER_ATTACHMENTS_PUBLIC_DIR = path.join(
+  process.cwd(),
+  "public",
+  "uploads",
+  "orders",
+);
+
 function parseRequesterFields(formData: FormData) {
   return OrderRequesterUpdateSchema.safeParse({
     title: getTrimmedString(formData.get("title")),
@@ -140,6 +154,49 @@ function hasUnexpectedFormKeys(
 function parseActionId(id: string) {
   const parsed = ActionIdSchema.safeParse(id);
   return parsed.success ? parsed.data : null;
+}
+
+function orderListPath(target: OrderListRedirectTarget): string {
+  return target === "trash" ? "/trash" : "/queue";
+}
+
+function sanitizeAttachmentName(fileName: string): string {
+  const trimmed = fileName.trim();
+  if (!trimmed) {
+    return "attachment";
+  }
+
+  const normalized = trimmed.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return normalized.slice(0, 120) || "attachment";
+}
+
+function buildAttachmentStoragePaths(
+  orderId: string,
+  originalName: string,
+): { publicPath: string; diskPath: string } {
+  const safeName = sanitizeAttachmentName(originalName);
+  const extension = path.extname(safeName);
+  const uniqueFileName = `${Date.now()}-${randomUUID()}${extension}`;
+  const publicPath = `/uploads/orders/${orderId}/${uniqueFileName}`;
+  const diskPath = path.join(
+    ORDER_ATTACHMENTS_PUBLIC_DIR,
+    orderId,
+    uniqueFileName,
+  );
+
+  return {
+    publicPath,
+    diskPath,
+  };
+}
+
+function resolveAttachmentDiskPath(storagePath: string): string | null {
+  const normalizedPath = path.posix.normalize(storagePath);
+  if (!normalizedPath.startsWith("/uploads/orders/")) {
+    return null;
+  }
+
+  return path.join(process.cwd(), "public", normalizedPath.replace(/^\/+/, ""));
 }
 
 function formatValue(value: unknown): string {
@@ -341,6 +398,198 @@ export async function listOrderActivities(
     role: activity.role,
     details: parseActivityDetails(activity.details),
   }));
+}
+
+export async function listOrderAttachments(orderId: string) {
+  await requireAuth();
+
+  const parsedOrderId = parseActionId(orderId);
+  if (!parsedOrderId) {
+    return [];
+  }
+
+  return prisma.orderAttachment.findMany({
+    where: { orderId: parsedOrderId },
+    orderBy: [{ createdAt: "desc" }],
+  });
+}
+
+export async function uploadOrderAttachment(
+  orderId: string,
+  _previousState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const actor = await requireAdmin();
+  const submittedValues = collectSubmittedValues(
+    formData,
+    ORDER_ATTACHMENT_ALLOWED_FIELDS,
+  );
+  const parsedOrderId = parseActionId(orderId);
+
+  if (!parsedOrderId) {
+    return {
+      success: null,
+      error: "Invalid order request.",
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
+
+  if (hasUnexpectedFormKeys(formData, ORDER_ATTACHMENT_ALLOWED_FIELDS)) {
+    return {
+      success: null,
+      error: "Unexpected fields in request.",
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
+
+  const fileValue = formData.get("attachment");
+  if (!(fileValue instanceof File) || fileValue.size === 0) {
+    return {
+      success: null,
+      error: "Please select a file to upload.",
+      fieldErrors: {
+        attachment: "Attachment file is required.",
+      },
+      submittedValues,
+    };
+  }
+
+  if (fileValue.size > ORDER_ATTACHMENT_MAX_BYTES) {
+    return {
+      success: null,
+      error: "File is too large.",
+      fieldErrors: {
+        attachment: "Attachment must be 10MB or smaller.",
+      },
+      submittedValues,
+    };
+  }
+
+  let diskPathForCleanup: string | null = null;
+
+  try {
+    const existingOrder = await prisma.order.findFirst({
+      where: { id: parsedOrderId, isDeleted: false },
+      select: { id: true },
+    });
+
+    if (!existingOrder) {
+      return {
+        success: null,
+        error: "Order not found.",
+        fieldErrors: {},
+        submittedValues,
+      };
+    }
+
+    const { publicPath, diskPath } = buildAttachmentStoragePaths(
+      parsedOrderId,
+      fileValue.name,
+    );
+
+    diskPathForCleanup = diskPath;
+    await mkdir(path.dirname(diskPath), { recursive: true });
+
+    const fileBuffer = Buffer.from(await fileValue.arrayBuffer());
+    await writeFile(diskPath, fileBuffer);
+
+    const createdAttachment = await prisma.orderAttachment.create({
+      data: {
+        orderId: parsedOrderId,
+        originalName: fileValue.name.trim().slice(0, 200) || "attachment",
+        storagePath: publicPath,
+        contentType: fileValue.type || null,
+        sizeBytes: fileValue.size,
+      },
+    });
+
+    await createOrderActivity({
+      orderId: parsedOrderId,
+      role: actor.role,
+      action: "ORDER_ATTACHMENT_UPLOADED",
+      summary: `Attachment uploaded: ${createdAttachment.originalName}`,
+      diffs: [
+        {
+          field: "attachment",
+          from: "N/A",
+          to: createdAttachment.originalName,
+        },
+      ],
+    });
+  } catch (error) {
+    if (diskPathForCleanup) {
+      await unlink(diskPathForCleanup).catch(() => undefined);
+    }
+
+    return {
+      success: null,
+      error: handleServerMutationError("uploadOrderAttachment", error),
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
+
+  revalidatePath(`/orders/${parsedOrderId}`);
+  redirect(`/orders/${parsedOrderId}?saved=attachment-uploaded`);
+}
+
+export async function deleteOrderAttachment(
+  orderId: string,
+  attachmentId: string,
+) {
+  const actor = await requireAdmin();
+  const parsedOrderId = parseActionId(orderId);
+  const parsedAttachmentId = parseActionId(attachmentId);
+
+  if (!parsedOrderId || !parsedAttachmentId) {
+    redirect(`/orders/${orderId}?saved=attachment-not-found`);
+  }
+
+  let redirectTarget = `/orders/${parsedOrderId}?saved=attachment-deleted`;
+
+  try {
+    const existingAttachment = await prisma.orderAttachment.findFirst({
+      where: {
+        id: parsedAttachmentId,
+        orderId: parsedOrderId,
+      },
+    });
+
+    if (!existingAttachment) {
+      redirectTarget = `/orders/${parsedOrderId}?saved=attachment-not-found`;
+    } else {
+      await prisma.orderAttachment.delete({
+        where: { id: parsedAttachmentId },
+      });
+
+      const diskPath = resolveAttachmentDiskPath(existingAttachment.storagePath);
+      if (diskPath) {
+        await unlink(diskPath).catch(() => undefined);
+      }
+
+      await createOrderActivity({
+        orderId: parsedOrderId,
+        role: actor.role,
+        action: "ORDER_ATTACHMENT_DELETED",
+        summary: `Attachment removed: ${existingAttachment.originalName}`,
+        diffs: [
+          {
+            field: "attachment",
+            from: existingAttachment.originalName,
+            to: "deleted",
+          },
+        ],
+      });
+    }
+  } catch (error) {
+    handleServerMutationError("deleteOrderAttachment", error);
+    redirectTarget = `/orders/${parsedOrderId}?saved=attachment-failed`;
+  }
+
+  revalidatePath(`/orders/${parsedOrderId}`);
+  redirect(redirectTarget);
 }
 
 export async function createOrder(
@@ -645,7 +894,7 @@ export async function removeOrderFromList(orderId: string) {
   }
 
   const actor = await requireAdmin();
-  let redirectTarget = "/queue?toast=order-removed&tone=success";
+  let redirectTarget = `/queue?toast=order-removed&tone=success&undoOrderId=${parsedOrderId}`;
 
   try {
     const existing = await prisma.order.findUnique({
@@ -692,24 +941,30 @@ export async function removeOrderFromList(orderId: string) {
   redirect(redirectTarget);
 }
 
-export async function restoreOrderFromTrash(orderId: string) {
+export async function restoreOrderFromTrash(
+  orderId: string,
+  returnTo: OrderListRedirectTarget = "queue",
+) {
   const parsedOrderId = parseActionId(orderId);
+  const targetPath = orderListPath(returnTo);
   if (!parsedOrderId) {
-    redirect("/queue?toast=order-not-found&tone=debug");
+    redirect(`${targetPath}?toast=order-not-found&tone=debug`);
   }
 
   const actor = await requireAdmin();
-  let redirectTarget = "/queue?toast=order-restored&tone=success";
+  let redirectTarget = `${targetPath}?toast=order-restored&tone=success`;
 
   try {
     const existing = await prisma.order.findUnique({
       where: { id: parsedOrderId },
+      select: { status: true, isDeleted: true },
     });
 
     if (!existing || !existing.isDeleted) {
-      redirectTarget = "/queue?toast=order-not-found&tone=debug";
+      redirectTarget = `${targetPath}?toast=order-not-found&tone=debug`;
     } else {
-      const nextStatus = existing.status === "CANCELLED" ? "NEW" : existing.status;
+      const nextStatus =
+        existing.status === "CANCELLED" ? "NEW" : existing.status;
       const diffs = buildDiffs(
         { status: existing.status, isDeleted: existing.isDeleted },
         { status: nextStatus, isDeleted: false },
@@ -733,22 +988,27 @@ export async function restoreOrderFromTrash(orderId: string) {
     }
   } catch (error) {
     handleServerMutationError("restoreOrderFromTrash", error);
-    redirectTarget = "/queue?toast=operation-failed&tone=debug";
+    redirectTarget = `${targetPath}?toast=operation-failed&tone=debug`;
   }
 
   revalidatePath("/queue");
+  revalidatePath("/trash");
   revalidatePath(`/orders/${parsedOrderId}`);
   redirect(redirectTarget);
 }
 
-export async function permanentlyDeleteOrder(orderId: string) {
+export async function permanentlyDeleteOrder(
+  orderId: string,
+  returnTo: OrderListRedirectTarget = "queue",
+) {
   const parsedOrderId = parseActionId(orderId);
+  const targetPath = orderListPath(returnTo);
   if (!parsedOrderId) {
-    redirect("/queue?toast=order-not-found&tone=debug");
+    redirect(`${targetPath}?toast=order-not-found&tone=debug`);
   }
 
   const actor = await requireAdmin();
-  let redirectTarget = "/queue?toast=order-permanently-deleted&tone=success";
+  let redirectTarget = `${targetPath}?toast=order-permanently-deleted&tone=success`;
 
   try {
     const existing = await prisma.order.findUnique({
@@ -756,7 +1016,7 @@ export async function permanentlyDeleteOrder(orderId: string) {
     });
 
     if (!existing || !existing.isDeleted) {
-      redirectTarget = "/queue?toast=order-not-found&tone=debug";
+      redirectTarget = `${targetPath}?toast=order-not-found&tone=debug`;
     } else {
       await createOrderActivity({
         orderId: null,
@@ -778,9 +1038,10 @@ export async function permanentlyDeleteOrder(orderId: string) {
     }
   } catch (error) {
     handleServerMutationError("permanentlyDeleteOrder", error);
-    redirectTarget = "/queue?toast=operation-failed&tone=debug";
+    redirectTarget = `${targetPath}?toast=operation-failed&tone=debug`;
   }
 
   revalidatePath("/queue");
+  revalidatePath("/trash");
   redirect(redirectTarget);
 }

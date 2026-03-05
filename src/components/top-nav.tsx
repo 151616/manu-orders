@@ -27,6 +27,14 @@ export function TopNav({ user }: TopNavProps) {
               New Order
             </Link>
           ) : null}
+          {canMutate ? (
+            <Link
+              href="/trash"
+              className="text-sm text-black/80 hover:text-black"
+            >
+              Trash
+            </Link>
+          ) : null}
           <Link
             href="/bookmarks"
             className="text-sm text-black/80 hover:text-black"

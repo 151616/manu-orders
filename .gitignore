@@ -46,3 +46,4 @@ dev.db
 dev.db-journal
 /backups
 *.pre-restore-*.sqlite
+/public/uploads

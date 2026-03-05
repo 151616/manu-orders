@@ -7,6 +7,7 @@
 ## Backup Targets
 - `dev`: local `file:./dev.db` (from `.env`).
 - `prod`: SQLite DB file configured via `DATABASE_URL` (for example `file:/var/lib/manuqueue/prod.db`).
+- File uploads: `public/uploads/` (order attachments).
 
 ## SQLite Backup (Dev)
 1. Ensure the app can access the DB file.
@@ -40,6 +41,7 @@ Notes:
   - Creates a `.zip`.
   - Removes the temporary uncompressed copy.
   - Prunes old zip files older than `--keep-days` (default `30`).
+- If attachments are in use, back up `public/uploads/` on the same schedule.
 
 ## Daily Automation
 Use your scheduler to run `db:backup` daily.
@@ -90,6 +92,7 @@ npm run db:restore -- --archive <path-to-zip> --skip-safety-backup
 - Keep monthly snapshots for 12 months in off-host storage.
 - Keep one immutable/offline copy (object lock or similar) for ransomware resilience.
 - Run a restore drill at least once per quarter.
+- Keep DB backup and `public/uploads/` backup from the same date to avoid metadata/file mismatch.
 
 ## If Migrating to Postgres
 If production moves to Postgres, enable provider-managed backups first (RDS/Cloud SQL/Neon/Supabase/etc.), then keep logical exports:

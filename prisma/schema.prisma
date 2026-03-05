@@ -46,6 +46,7 @@ model Order {
   notesFromManu    String?
   createdByLabel   String?
   activities       OrderActivity[]
+  attachments      OrderAttachment[]
 }
 
 model Bookmark {
@@ -74,6 +75,19 @@ model OrderActivity {
 
   @@index([orderId, at])
   @@index([role, at])
+}
+
+model OrderAttachment {
+  id           String   @id @default(uuid())
+  orderId      String
+  originalName String
+  storagePath  String   @unique
+  contentType  String?
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
 }
 
 model LoginAttempt {

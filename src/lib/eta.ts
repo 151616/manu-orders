@@ -9,14 +9,16 @@ export function addDays(base: Date, days: number): Date {
   return new Date(base.getTime() + days * MILLISECONDS_PER_DAY);
 }
 
-export function getRemainingEtaDays(order: EtaInput): number {
+export function getEtaDeltaDays(order: EtaInput): number {
   if (!order.etaTargetDate) {
     return order.etaDays;
   }
 
-  const diff = Math.ceil(
+  return Math.ceil(
     (order.etaTargetDate.getTime() - Date.now()) / MILLISECONDS_PER_DAY,
   );
+}
 
-  return Math.max(0, diff);
+export function getRemainingEtaDays(order: EtaInput): number {
+  return Math.max(0, getEtaDeltaDays(order));
 }

@@ -21,6 +21,7 @@ function daysFromNow(days: number) {
 
 async function main() {
   await prisma.orderActivity.deleteMany();
+  await prisma.orderAttachment.deleteMany();
   await prisma.order.deleteMany();
   await prisma.bookmark.deleteMany();
   await prisma.loginAttempt.deleteMany();

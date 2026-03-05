@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { OrderCategory, OrderStatus } from "@prisma/client";
 import {
-  listDeletedOrders,
   listOrders,
-  permanentlyDeleteOrder,
   removeOrderFromList,
   restoreOrderFromTrash,
 } from "@/app/orders/actions";
@@ -18,7 +16,7 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUSES,
 } from "@/lib/order-domain";
-import { getRemainingEtaDays } from "@/lib/eta";
+import { getEtaDeltaDays, getRemainingEtaDays } from "@/lib/eta";
 
 type QueuePageProps = {
   searchParams: Promise<{
@@ -29,6 +27,7 @@ type QueuePageProps = {
     filters?: string | string[];
     toast?: string | string[];
     tone?: string | string[];
+    undoOrderId?: string | string[];
   }>;
 };
 
@@ -83,8 +82,17 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   const showFilters = !isMonitor || first(params.filters) === "1";
   const toastCode = first(params.toast);
   const toastTone = first(params.tone) === "debug" ? "debug" : "success";
+  const undoOrderId = first(params.undoOrderId)?.trim() ?? "";
   const toast = toastMessage(toastCode);
   const canRemoveFromList = user.role === "ADMIN" && !isMonitor;
+  const showUndo =
+    user.role === "ADMIN" &&
+    !isMonitor &&
+    toastCode === "order-removed" &&
+    undoOrderId.length > 0;
+  const undoRemoveAction = showUndo
+    ? restoreOrderFromTrash.bind(null, undoOrderId, "queue")
+    : null;
 
   const status: OrderStatus | "ALL" =
     ORDER_STATUSES.includes(statusRaw as OrderStatus)
@@ -106,12 +114,24 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
     status,
     category,
   });
-  const deletedOrders =
-    user.role === "ADMIN" && !isMonitor ? await listDeletedOrders() : [];
 
   return (
     <section className={isMonitor ? "space-y-4" : "space-y-6"}>
       {toast ? <ToastBanner tone={toastTone} message={toast} /> : null}
+      {showUndo && undoRemoveAction ? (
+        <form
+          action={undoRemoveAction}
+          className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          <p>Order moved to trash. Undo?</p>
+          <button
+            type="submit"
+            className="rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+          >
+            Restore
+          </button>
+        </form>
+      ) : null}
 
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -256,15 +276,28 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
         >
           {orders.map((order) => {
             const etaRemaining = getRemainingEtaDays(order);
+            const etaDelta = getEtaDeltaDays(order);
+            const isTerminal =
+              order.status === "DONE" || order.status === "CANCELLED";
+            const isOverdue = !isTerminal && etaDelta < 0;
+            const isDueSoon = !isTerminal && etaDelta >= 0 && etaDelta <= 2;
             const removeAction = removeOrderFromList.bind(null, order.id);
 
             return (
               <article
                 key={order.id}
                 className={
-                  isMonitor
-                    ? "space-y-4 rounded-xl border border-black/10 bg-white p-5 transition hover:border-black/30 hover:shadow-sm"
-                    : "space-y-3 rounded-lg border border-black/10 bg-white p-4 transition hover:border-black/30 hover:shadow-sm"
+                  isOverdue
+                    ? isMonitor
+                      ? "space-y-4 rounded-xl border border-red-200 bg-red-50 p-5 transition hover:border-red-300 hover:shadow-sm"
+                      : "space-y-3 rounded-lg border border-red-200 bg-red-50 p-4 transition hover:border-red-300 hover:shadow-sm"
+                    : isDueSoon
+                      ? isMonitor
+                        ? "space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-5 transition hover:border-amber-300 hover:shadow-sm"
+                        : "space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 transition hover:border-amber-300 hover:shadow-sm"
+                      : isMonitor
+                        ? "space-y-4 rounded-xl border border-black/10 bg-white p-5 transition hover:border-black/30 hover:shadow-sm"
+                        : "space-y-3 rounded-lg border border-black/10 bg-white p-4 transition hover:border-black/30 hover:shadow-sm"
                 }
               >
                 <Link href={`/orders/${order.id}`} className="block space-y-3">
@@ -301,7 +334,17 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       <p className="text-xs uppercase tracking-wide text-black/50">
                         ETA
                       </p>
-                      <p>{etaRemaining} day(s)</p>
+                      {isOverdue ? (
+                        <p className="font-medium text-red-700">
+                          Overdue by {Math.abs(etaDelta)} day(s)
+                        </p>
+                      ) : isDueSoon ? (
+                        <p className="font-medium text-amber-900">
+                          Due in {etaRemaining} day(s)
+                        </p>
+                      ) : (
+                        <p>{etaRemaining} day(s)</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-black/50">
@@ -336,57 +379,6 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
           })}
         </div>
       )}
-
-      {user.role === "ADMIN" && !isMonitor ? (
-        <div className="space-y-3 rounded-lg border border-black/10 bg-white p-4">
-          <h2 className="text-lg font-semibold text-black">Trash</h2>
-          {deletedOrders.length === 0 ? (
-            <p className="text-sm text-black/70">No deleted orders.</p>
-          ) : (
-            <ul className="space-y-2">
-              {deletedOrders.map((order) => {
-                const restoreAction = restoreOrderFromTrash.bind(null, order.id);
-                const permanentDeleteAction = permanentlyDeleteOrder.bind(
-                  null,
-                  order.id,
-                );
-
-                return (
-                  <li
-                    key={order.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-black/10 bg-slate-50 px-3 py-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-black">{order.title}</p>
-                      <p className="text-xs text-black/60">
-                        Deleted on {order.updatedAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <form action={restoreAction}>
-                        <button
-                          type="submit"
-                          className="rounded-md border border-black/20 bg-white px-3 py-1 text-xs font-medium text-black hover:bg-black/5"
-                        >
-                          Restore
-                        </button>
-                      </form>
-                      <form action={permanentDeleteAction}>
-                        <button
-                          type="submit"
-                          className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
-                        >
-                          Permanently Delete
-                        </button>
-                      </form>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      ) : null}
     </section>
   );
 }
