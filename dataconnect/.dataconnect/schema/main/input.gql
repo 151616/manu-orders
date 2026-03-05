@@ -1,0 +1,1280 @@
+"""
+✨ `Order_KeyOutput` returns the primary key fields of table type `Order`.
+
+It has the same format as `Order_Key`, but is only used as mutation return value.
+"""
+scalar Order_KeyOutput
+"""
+✨ `OrderItem_KeyOutput` returns the primary key fields of table type `OrderItem`.
+
+It has the same format as `OrderItem_Key`, but is only used as mutation return value.
+"""
+scalar OrderItem_KeyOutput
+"""
+✨ `Team_KeyOutput` returns the primary key fields of table type `Team`.
+
+It has the same format as `Team_Key`, but is only used as mutation return value.
+"""
+scalar Team_KeyOutput
+"""
+✨ `Vendor_KeyOutput` returns the primary key fields of table type `Vendor`.
+
+It has the same format as `Vendor_Key`, but is only used as mutation return value.
+"""
+scalar Vendor_KeyOutput
+"""
+✨ Generated data input type for table 'Order'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Order_Data {
+  """
+  ✨ Generated from Field `Order`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Order`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Order`.`teamId` of type `UUID!`
+  """
+  teamId: UUID
+  """
+  ✨ `_expr` server value variant of `teamId` (✨ Generated from Field `Order`.`teamId` of type `UUID!`)
+  """
+  teamId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Order`.`vendorId` of type `UUID!`
+  """
+  vendorId: UUID
+  """
+  ✨ `_expr` server value variant of `vendorId` (✨ Generated from Field `Order`.`vendorId` of type `UUID!`)
+  """
+  vendorId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Order`.`team` of type `Team!`
+  """
+  team: Team_Key
+  """
+  ✨ Generated from Field `Order`.`vendor` of type `Vendor!`
+  """
+  vendor: Vendor_Key
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate` of type `Date`
+  """
+  actualArrivalDate: Date
+  """
+  ✨ `_date` server value variant of `actualArrivalDate` (✨ Generated from Field `Order`.`actualArrivalDate` of type `Date`)
+  """
+  actualArrivalDate_date: Date_Relative
+  """
+  ✨ `_expr` server value variant of `actualArrivalDate` (✨ Generated from Field `Order`.`actualArrivalDate` of type `Date`)
+  """
+  actualArrivalDate_expr: Date_Expr
+  """
+  ✨ `_update` server value variant of `actualArrivalDate` (✨ Generated from Field `Order`.`actualArrivalDate` of type `Date`)
+  """
+  actualArrivalDate_update: [Date_Update!]
+  """
+  ✨ Generated from Field `Order`.`expectedETA` of type `Date!`
+  """
+  expectedETA: Date
+  """
+  ✨ `_date` server value variant of `expectedETA` (✨ Generated from Field `Order`.`expectedETA` of type `Date!`)
+  """
+  expectedETA_date: Date_Relative
+  """
+  ✨ `_expr` server value variant of `expectedETA` (✨ Generated from Field `Order`.`expectedETA` of type `Date!`)
+  """
+  expectedETA_expr: Date_Expr
+  """
+  ✨ `_update` server value variant of `expectedETA` (✨ Generated from Field `Order`.`expectedETA` of type `Date!`)
+  """
+  expectedETA_update: [Date_Update!]
+  """
+  ✨ Generated from Field `Order`.`notes` of type `String`
+  """
+  notes: String
+  """
+  ✨ `_expr` server value variant of `notes` (✨ Generated from Field `Order`.`notes` of type `String`)
+  """
+  notes_expr: String_Expr
+  """
+  ✨ Generated from Field `Order`.`orderDate` of type `Date!`
+  """
+  orderDate: Date
+  """
+  ✨ `_date` server value variant of `orderDate` (✨ Generated from Field `Order`.`orderDate` of type `Date!`)
+  """
+  orderDate_date: Date_Relative
+  """
+  ✨ `_expr` server value variant of `orderDate` (✨ Generated from Field `Order`.`orderDate` of type `Date!`)
+  """
+  orderDate_expr: Date_Expr
+  """
+  ✨ `_update` server value variant of `orderDate` (✨ Generated from Field `Order`.`orderDate` of type `Date!`)
+  """
+  orderDate_update: [Date_Update!]
+  """
+  ✨ Generated from Field `Order`.`orderNumber` of type `String!`
+  """
+  orderNumber: String
+  """
+  ✨ `_expr` server value variant of `orderNumber` (✨ Generated from Field `Order`.`orderNumber` of type `String!`)
+  """
+  orderNumber_expr: String_Expr
+  """
+  ✨ Generated from Field `Order`.`status` of type `String`
+  """
+  status: String
+  """
+  ✨ `_expr` server value variant of `status` (✨ Generated from Field `Order`.`status` of type `String`)
+  """
+  status_expr: String_Expr
+  """
+  ✨ Generated from Field `Order`.`trackingNumber` of type `String`
+  """
+  trackingNumber: String
+  """
+  ✨ `_expr` server value variant of `trackingNumber` (✨ Generated from Field `Order`.`trackingNumber` of type `String`)
+  """
+  trackingNumber_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Order'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Order_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Order_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Order_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Order_Filter!]
+  """
+  ✨ Generated from Field `Order`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Order`.`teamId` of type `UUID!`
+  """
+  teamId: UUID_Filter
+  """
+  ✨ Generated from Field `Order`.`vendorId` of type `UUID!`
+  """
+  vendorId: UUID_Filter
+  """
+  ✨ Generated from Field `Order`.`team` of type `Team!`
+  """
+  team: Team_Filter
+  """
+  ✨ Generated from Field `Order`.`vendor` of type `Vendor!`
+  """
+  vendor: Vendor_Filter
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate` of type `Date`
+  """
+  actualArrivalDate: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`expectedETA` of type `Date!`
+  """
+  expectedETA: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`notes` of type `String`
+  """
+  notes: String_Filter
+  """
+  ✨ Generated from Field `Order`.`orderDate` of type `Date!`
+  """
+  orderDate: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`orderNumber` of type `String!`
+  """
+  orderNumber: String_Filter
+  """
+  ✨ Generated from Field `Order`.`status` of type `String`
+  """
+  status: String_Filter
+  """
+  ✨ Generated from Field `Order`.`trackingNumber` of type `String`
+  """
+  trackingNumber: String_Filter
+  """
+  ✨ Generated from Field `Order`.`orderItems_on_order` of type `[OrderItem!]!`
+  """
+  orderItems_on_order: OrderItem_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Order'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Order_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Order_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Order_Filter
+}
+"""
+✨ Generated having input type for table 'Order'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Order_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Order_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Order_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Order_Having!]
+  """
+  ✨ Generated from Field `Order`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate_count` of type `Int!`
+  """
+  actualArrivalDate_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`expectedETA_count` of type `Int!`
+  """
+  expectedETA_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`notes_count` of type `Int!`
+  """
+  notes_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`orderDate_count` of type `Int!`
+  """
+  orderDate_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`orderNumber_count` of type `Int!`
+  """
+  orderNumber_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`status_count` of type `Int!`
+  """
+  status_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`teamId_count` of type `Int!`
+  """
+  teamId_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`trackingNumber_count` of type `Int!`
+  """
+  trackingNumber_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`vendorId_count` of type `Int!`
+  """
+  vendorId_count: Int_Filter
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate_min` of type `Date`
+  """
+  actualArrivalDate_min: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`expectedETA_min` of type `Date`
+  """
+  expectedETA_min: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`orderDate_min` of type `Date`
+  """
+  orderDate_min: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate_max` of type `Date`
+  """
+  actualArrivalDate_max: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`expectedETA_max` of type `Date`
+  """
+  expectedETA_max: Date_Filter
+  """
+  ✨ Generated from Field `Order`.`orderDate_max` of type `Date`
+  """
+  orderDate_max: Date_Filter
+}
+"""
+✨ Generated key input type for table 'Order'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Order_Key {
+  """
+  ✨ Generated from Field `Order`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Order`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Order'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Order_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Order_Filter
+}
+"""
+✨ Generated order input type for table 'Order'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Order_Order {
+  """
+  ✨ Generated from Field `Order`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`teamId` of type `UUID!`
+  """
+  teamId: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`vendorId` of type `UUID!`
+  """
+  vendorId: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`team` of type `Team!`
+  """
+  team: Team_Order
+  """
+  ✨ Generated from Field `Order`.`vendor` of type `Vendor!`
+  """
+  vendor: Vendor_Order
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate` of type `Date`
+  """
+  actualArrivalDate: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`expectedETA` of type `Date!`
+  """
+  expectedETA: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`notes` of type `String`
+  """
+  notes: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`orderDate` of type `Date!`
+  """
+  orderDate: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`orderNumber` of type `String!`
+  """
+  orderNumber: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`status` of type `String`
+  """
+  status: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`trackingNumber` of type `String`
+  """
+  trackingNumber: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate_count` of type `Int!`
+  """
+  actualArrivalDate_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`expectedETA_count` of type `Int!`
+  """
+  expectedETA_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`notes_count` of type `Int!`
+  """
+  notes_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`orderDate_count` of type `Int!`
+  """
+  orderDate_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`orderNumber_count` of type `Int!`
+  """
+  orderNumber_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`status_count` of type `Int!`
+  """
+  status_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`teamId_count` of type `Int!`
+  """
+  teamId_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`trackingNumber_count` of type `Int!`
+  """
+  trackingNumber_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`vendorId_count` of type `Int!`
+  """
+  vendorId_count: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate_min` of type `Date`
+  """
+  actualArrivalDate_min: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`expectedETA_min` of type `Date`
+  """
+  expectedETA_min: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`orderDate_min` of type `Date`
+  """
+  orderDate_min: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`actualArrivalDate_max` of type `Date`
+  """
+  actualArrivalDate_max: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`expectedETA_max` of type `Date`
+  """
+  expectedETA_max: OrderDirection
+  """
+  ✨ Generated from Field `Order`.`orderDate_max` of type `Date`
+  """
+  orderDate_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'OrderItem'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input OrderItem_Data {
+  """
+  ✨ Generated from Field `OrderItem`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `OrderItem`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `OrderItem`.`orderId` of type `UUID!`
+  """
+  orderId: UUID
+  """
+  ✨ `_expr` server value variant of `orderId` (✨ Generated from Field `OrderItem`.`orderId` of type `UUID!`)
+  """
+  orderId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `OrderItem`.`order` of type `Order!`
+  """
+  order: Order_Key
+  """
+  ✨ Generated from Field `OrderItem`.`description` of type `String`
+  """
+  description: String
+  """
+  ✨ `_expr` server value variant of `description` (✨ Generated from Field `OrderItem`.`description` of type `String`)
+  """
+  description_expr: String_Expr
+  """
+  ✨ Generated from Field `OrderItem`.`partName` of type `String!`
+  """
+  partName: String
+  """
+  ✨ `_expr` server value variant of `partName` (✨ Generated from Field `OrderItem`.`partName` of type `String!`)
+  """
+  partName_expr: String_Expr
+  """
+  ✨ Generated from Field `OrderItem`.`partNumber` of type `String`
+  """
+  partNumber: String
+  """
+  ✨ `_expr` server value variant of `partNumber` (✨ Generated from Field `OrderItem`.`partNumber` of type `String`)
+  """
+  partNumber_expr: String_Expr
+  """
+  ✨ Generated from Field `OrderItem`.`quantity` of type `Int!`
+  """
+  quantity: Int
+  """
+  ✨ `_expr` server value variant of `quantity` (✨ Generated from Field `OrderItem`.`quantity` of type `Int!`)
+  """
+  quantity_expr: Int_Expr
+  """
+  ✨ `_update` server value variant of `quantity` (✨ Generated from Field `OrderItem`.`quantity` of type `Int!`)
+  """
+  quantity_update: [Int_Update!]
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice` of type `Float!`
+  """
+  unitPrice: Float
+  """
+  ✨ `_expr` server value variant of `unitPrice` (✨ Generated from Field `OrderItem`.`unitPrice` of type `Float!`)
+  """
+  unitPrice_expr: Float_Expr
+  """
+  ✨ `_update` server value variant of `unitPrice` (✨ Generated from Field `OrderItem`.`unitPrice` of type `Float!`)
+  """
+  unitPrice_update: [Float_Update!]
+}
+"""
+✨ Generated filter input type for table 'OrderItem'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input OrderItem_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [OrderItem_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: OrderItem_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [OrderItem_Filter!]
+  """
+  ✨ Generated from Field `OrderItem`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`orderId` of type `UUID!`
+  """
+  orderId: UUID_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`order` of type `Order!`
+  """
+  order: Order_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`description` of type `String`
+  """
+  description: String_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`partName` of type `String!`
+  """
+  partName: String_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`partNumber` of type `String`
+  """
+  partNumber: String_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`quantity` of type `Int!`
+  """
+  quantity: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice` of type `Float!`
+  """
+  unitPrice: Float_Filter
+}
+"""
+✨ Generated first-row input type for table 'OrderItem'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input OrderItem_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [OrderItem_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: OrderItem_Filter
+}
+"""
+✨ Generated having input type for table 'OrderItem'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input OrderItem_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [OrderItem_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: OrderItem_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [OrderItem_Having!]
+  """
+  ✨ Generated from Field `OrderItem`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`description_count` of type `Int!`
+  """
+  description_count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`orderId_count` of type `Int!`
+  """
+  orderId_count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`partName_count` of type `Int!`
+  """
+  partName_count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`partNumber_count` of type `Int!`
+  """
+  partNumber_count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_count` of type `Int!`
+  """
+  quantity_count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_count` of type `Int!`
+  """
+  unitPrice_count: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_sum` of type `Int`
+  """
+  quantity_sum: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_sum` of type `Float`
+  """
+  unitPrice_sum: Float_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_avg` of type `Float`
+  """
+  quantity_avg: Float_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_avg` of type `Float`
+  """
+  unitPrice_avg: Float_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_min` of type `Int`
+  """
+  quantity_min: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_min` of type `Float`
+  """
+  unitPrice_min: Float_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_max` of type `Int`
+  """
+  quantity_max: Int_Filter
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_max` of type `Float`
+  """
+  unitPrice_max: Float_Filter
+}
+"""
+✨ Generated key input type for table 'OrderItem'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input OrderItem_Key {
+  """
+  ✨ Generated from Field `OrderItem`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `OrderItem`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'OrderItem'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input OrderItem_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: OrderItem_Filter
+}
+"""
+✨ Generated order input type for table 'OrderItem'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input OrderItem_Order {
+  """
+  ✨ Generated from Field `OrderItem`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`orderId` of type `UUID!`
+  """
+  orderId: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`order` of type `Order!`
+  """
+  order: Order_Order
+  """
+  ✨ Generated from Field `OrderItem`.`description` of type `String`
+  """
+  description: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`partName` of type `String!`
+  """
+  partName: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`partNumber` of type `String`
+  """
+  partNumber: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`quantity` of type `Int!`
+  """
+  quantity: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice` of type `Float!`
+  """
+  unitPrice: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`description_count` of type `Int!`
+  """
+  description_count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`orderId_count` of type `Int!`
+  """
+  orderId_count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`partName_count` of type `Int!`
+  """
+  partName_count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`partNumber_count` of type `Int!`
+  """
+  partNumber_count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_count` of type `Int!`
+  """
+  quantity_count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_count` of type `Int!`
+  """
+  unitPrice_count: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_sum` of type `Int`
+  """
+  quantity_sum: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_sum` of type `Float`
+  """
+  unitPrice_sum: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_avg` of type `Float`
+  """
+  quantity_avg: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_avg` of type `Float`
+  """
+  unitPrice_avg: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_min` of type `Int`
+  """
+  quantity_min: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_min` of type `Float`
+  """
+  unitPrice_min: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`quantity_max` of type `Int`
+  """
+  quantity_max: OrderDirection
+  """
+  ✨ Generated from Field `OrderItem`.`unitPrice_max` of type `Float`
+  """
+  unitPrice_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Team'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Team_Data {
+  """
+  ✨ Generated from Field `Team`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Team`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Team`.`coachName` of type `String`
+  """
+  coachName: String
+  """
+  ✨ `_expr` server value variant of `coachName` (✨ Generated from Field `Team`.`coachName` of type `String`)
+  """
+  coachName_expr: String_Expr
+  """
+  ✨ Generated from Field `Team`.`contactEmail` of type `String`
+  """
+  contactEmail: String
+  """
+  ✨ `_expr` server value variant of `contactEmail` (✨ Generated from Field `Team`.`contactEmail` of type `String`)
+  """
+  contactEmail_expr: String_Expr
+  """
+  ✨ Generated from Field `Team`.`name` of type `String!`
+  """
+  name: String
+  """
+  ✨ `_expr` server value variant of `name` (✨ Generated from Field `Team`.`name` of type `String!`)
+  """
+  name_expr: String_Expr
+  """
+  ✨ Generated from Field `Team`.`teamNumber` of type `Int!`
+  """
+  teamNumber: Int
+  """
+  ✨ `_expr` server value variant of `teamNumber` (✨ Generated from Field `Team`.`teamNumber` of type `Int!`)
+  """
+  teamNumber_expr: Int_Expr
+  """
+  ✨ `_update` server value variant of `teamNumber` (✨ Generated from Field `Team`.`teamNumber` of type `Int!`)
+  """
+  teamNumber_update: [Int_Update!]
+}
+"""
+✨ Generated filter input type for table 'Team'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Team_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Team_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Team_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Team_Filter!]
+  """
+  ✨ Generated from Field `Team`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Team`.`coachName` of type `String`
+  """
+  coachName: String_Filter
+  """
+  ✨ Generated from Field `Team`.`contactEmail` of type `String`
+  """
+  contactEmail: String_Filter
+  """
+  ✨ Generated from Field `Team`.`name` of type `String!`
+  """
+  name: String_Filter
+  """
+  ✨ Generated from Field `Team`.`teamNumber` of type `Int!`
+  """
+  teamNumber: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`orders_on_team` of type `[Order!]!`
+  """
+  orders_on_team: Order_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Team'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Team_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Team_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Team_Filter
+}
+"""
+✨ Generated having input type for table 'Team'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Team_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Team_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Team_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Team_Having!]
+  """
+  ✨ Generated from Field `Team`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`coachName_count` of type `Int!`
+  """
+  coachName_count: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`contactEmail_count` of type `Int!`
+  """
+  contactEmail_count: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`name_count` of type `Int!`
+  """
+  name_count: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`teamNumber_count` of type `Int!`
+  """
+  teamNumber_count: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`teamNumber_sum` of type `Int`
+  """
+  teamNumber_sum: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`teamNumber_avg` of type `Float`
+  """
+  teamNumber_avg: Float_Filter
+  """
+  ✨ Generated from Field `Team`.`teamNumber_min` of type `Int`
+  """
+  teamNumber_min: Int_Filter
+  """
+  ✨ Generated from Field `Team`.`teamNumber_max` of type `Int`
+  """
+  teamNumber_max: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Team'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Team_Key {
+  """
+  ✨ Generated from Field `Team`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Team`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Team'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Team_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Team_Filter
+}
+"""
+✨ Generated order input type for table 'Team'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Team_Order {
+  """
+  ✨ Generated from Field `Team`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`coachName` of type `String`
+  """
+  coachName: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`contactEmail` of type `String`
+  """
+  contactEmail: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`name` of type `String!`
+  """
+  name: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`teamNumber` of type `Int!`
+  """
+  teamNumber: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`coachName_count` of type `Int!`
+  """
+  coachName_count: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`contactEmail_count` of type `Int!`
+  """
+  contactEmail_count: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`name_count` of type `Int!`
+  """
+  name_count: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`teamNumber_count` of type `Int!`
+  """
+  teamNumber_count: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`teamNumber_sum` of type `Int`
+  """
+  teamNumber_sum: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`teamNumber_avg` of type `Float`
+  """
+  teamNumber_avg: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`teamNumber_min` of type `Int`
+  """
+  teamNumber_min: OrderDirection
+  """
+  ✨ Generated from Field `Team`.`teamNumber_max` of type `Int`
+  """
+  teamNumber_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Vendor'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Vendor_Data {
+  """
+  ✨ Generated from Field `Vendor`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Vendor`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Vendor`.`contactEmail` of type `String`
+  """
+  contactEmail: String
+  """
+  ✨ `_expr` server value variant of `contactEmail` (✨ Generated from Field `Vendor`.`contactEmail` of type `String`)
+  """
+  contactEmail_expr: String_Expr
+  """
+  ✨ Generated from Field `Vendor`.`name` of type `String!`
+  """
+  name: String
+  """
+  ✨ `_expr` server value variant of `name` (✨ Generated from Field `Vendor`.`name` of type `String!`)
+  """
+  name_expr: String_Expr
+  """
+  ✨ Generated from Field `Vendor`.`phoneNumber` of type `String`
+  """
+  phoneNumber: String
+  """
+  ✨ `_expr` server value variant of `phoneNumber` (✨ Generated from Field `Vendor`.`phoneNumber` of type `String`)
+  """
+  phoneNumber_expr: String_Expr
+  """
+  ✨ Generated from Field `Vendor`.`website` of type `String`
+  """
+  website: String
+  """
+  ✨ `_expr` server value variant of `website` (✨ Generated from Field `Vendor`.`website` of type `String`)
+  """
+  website_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Vendor'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Vendor_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Vendor_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Vendor_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Vendor_Filter!]
+  """
+  ✨ Generated from Field `Vendor`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Vendor`.`contactEmail` of type `String`
+  """
+  contactEmail: String_Filter
+  """
+  ✨ Generated from Field `Vendor`.`name` of type `String!`
+  """
+  name: String_Filter
+  """
+  ✨ Generated from Field `Vendor`.`phoneNumber` of type `String`
+  """
+  phoneNumber: String_Filter
+  """
+  ✨ Generated from Field `Vendor`.`website` of type `String`
+  """
+  website: String_Filter
+  """
+  ✨ Generated from Field `Vendor`.`orders_on_vendor` of type `[Order!]!`
+  """
+  orders_on_vendor: Order_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Vendor'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Vendor_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Vendor_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Vendor_Filter
+}
+"""
+✨ Generated having input type for table 'Vendor'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Vendor_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Vendor_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Vendor_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Vendor_Having!]
+  """
+  ✨ Generated from Field `Vendor`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Vendor`.`contactEmail_count` of type `Int!`
+  """
+  contactEmail_count: Int_Filter
+  """
+  ✨ Generated from Field `Vendor`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Vendor`.`name_count` of type `Int!`
+  """
+  name_count: Int_Filter
+  """
+  ✨ Generated from Field `Vendor`.`phoneNumber_count` of type `Int!`
+  """
+  phoneNumber_count: Int_Filter
+  """
+  ✨ Generated from Field `Vendor`.`website_count` of type `Int!`
+  """
+  website_count: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Vendor'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Vendor_Key {
+  """
+  ✨ Generated from Field `Vendor`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Vendor`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Vendor'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Vendor_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Vendor_Filter
+}
+"""
+✨ Generated order input type for table 'Vendor'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Vendor_Order {
+  """
+  ✨ Generated from Field `Vendor`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`contactEmail` of type `String`
+  """
+  contactEmail: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`name` of type `String!`
+  """
+  name: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`phoneNumber` of type `String`
+  """
+  phoneNumber: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`website` of type `String`
+  """
+  website: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`contactEmail_count` of type `Int!`
+  """
+  contactEmail_count: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`name_count` of type `Int!`
+  """
+  name_count: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`phoneNumber_count` of type `Int!`
+  """
+  phoneNumber_count: OrderDirection
+  """
+  ✨ Generated from Field `Vendor`.`website_count` of type `Int!`
+  """
+  website_count: OrderDirection
+}

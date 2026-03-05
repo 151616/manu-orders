@@ -255,6 +255,11 @@ export default async function OrderDetailPage({
                 order.id,
                 attachment.id,
               );
+              const attachmentHref =
+                attachment.publicUrl ||
+                (attachment.storagePath.startsWith("/")
+                  ? attachment.storagePath
+                  : null);
 
               return (
                 <li
@@ -262,16 +267,22 @@ export default async function OrderDetailPage({
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-black/10 bg-slate-50 px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <a
-                      href={attachment.storagePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="truncate text-sm font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
-                    >
-                      {attachment.originalName}
-                    </a>
+                    {attachmentHref ? (
+                      <a
+                        href={attachmentHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-sm font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
+                      >
+                        {attachment.originalName}
+                      </a>
+                    ) : (
+                      <p className="truncate text-sm font-medium text-black/80">
+                        {attachment.originalName}
+                      </p>
+                    )}
                     <p className="text-xs text-black/60">
-                      {formatFileSize(attachment.sizeBytes)} •{" "}
+                      {formatFileSize(attachment.sizeBytes)} -{" "}
                       {attachment.createdAt.toLocaleString()}
                     </p>
                   </div>

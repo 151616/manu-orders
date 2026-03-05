@@ -1,0 +1,22 @@
+runConfig:
+  minInstances: 0
+  maxInstances: 2
+  cpu: 1
+  memoryMiB: 512
+env:
+  - variable: DATABASE_URL
+    secret: MANUQUEUE_DATABASE_URL
+  - variable: SESSION_SECRET
+    secret: MANUQUEUE_SESSION_SECRET
+  - variable: SESSION_ISSUER
+    value: manuqueue-app
+  - variable: SESSION_AUDIENCE
+    value: manuqueue-users
+  - variable: TEAM_ACCESS_CODE
+    secret: MANUQUEUE_TEAM_ACCESS_CODE
+  - variable: TEAM_ADMIN_CODE
+    secret: MANUQUEUE_TEAM_ADMIN_CODE
+  - variable: ORDER_ATTACHMENT_STORAGE_DRIVER
+    value: firebase
+  - variable: FIREBASE_STORAGE_BUCKET
+    secret: MANUQUEUE_FIREBASE_STORAGE_BUCKET

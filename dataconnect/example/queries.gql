@@ -1,0 +1,63 @@
+query ListAllTeams @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  teams {
+    id
+    name
+    teamNumber
+    contactEmail
+  }
+}
+
+query GetOrderById($orderId: UUID!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  order(id: $orderId) {
+    id
+    orderNumber
+    orderDate
+    expectedETA
+    status
+    notes
+    team {
+      name
+      teamNumber
+    }
+    vendor {
+      name
+    }
+    orderItems_on_order {
+      id
+      partName
+      quantity
+      unitPrice
+    }
+  }
+}
+
+mutation CreateNewOrder(
+  $teamId: UUID!,
+  $vendorId: UUID!,
+  $orderNumber: String!,
+  $orderDate: Date!,
+  $expectedETA: Date!,
+  $status: String
+) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  order_insert(data: {
+    teamId: $teamId,
+    vendorId: $vendorId,
+    orderNumber: $orderNumber,
+    orderDate: $orderDate,
+    expectedETA: $expectedETA,
+    status: $status
+  }) {
+    id
+  }
+}
+
+mutation UpdateOrderItemQuantity($orderItemId: UUID!, $newQuantity: Int!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  orderItem_update(
+    id: $orderItemId,
+    data: {
+      quantity: $newQuantity
+    }
+  ) {
+    id
+  }
+}

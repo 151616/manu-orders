@@ -1,0 +1,34 @@
+type Team @table {
+  name: String!
+  teamNumber: Int!
+  contactEmail: String
+  coachName: String
+}
+
+type Vendor @table {
+  name: String!
+  website: String
+  contactEmail: String
+  phoneNumber: String
+}
+
+type Order @table {
+  team: Team!
+  vendor: Vendor!
+  orderNumber: String!
+  orderDate: Date!
+  expectedETA: Date!
+  actualArrivalDate: Date
+  trackingNumber: String
+  status: String
+  notes: String
+}
+
+type OrderItem @table {
+  order: Order!
+  partName: String!
+  quantity: Int!
+  unitPrice: Float!
+  partNumber: String
+  description: String
+}

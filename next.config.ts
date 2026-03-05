@@ -14,6 +14,7 @@ const CONTENT_SECURITY_POLICY = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["firebase-admin"],
   async headers() {
     return [
       {

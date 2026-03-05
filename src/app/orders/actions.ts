@@ -1,8 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { OrderCategory, OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -24,6 +21,11 @@ import {
   OrderRequesterUpdateSchema,
 } from "@/lib/schemas";
 import { addDays } from "@/lib/eta";
+import {
+  deleteOrderAttachmentObject,
+  resolveOrderAttachmentPublicUrl,
+  uploadOrderAttachmentObject,
+} from "@/lib/order-attachments-storage";
 import { prisma } from "@/lib/prisma";
 
 type ListOrdersInput = {
@@ -51,6 +53,17 @@ type OrderActivityFeedItem = {
   at: Date;
   role: string;
   details: ActivityDetails;
+};
+
+type OrderAttachmentListItem = {
+  id: string;
+  orderId: string;
+  originalName: string;
+  storagePath: string;
+  publicUrl: string;
+  contentType: string | null;
+  sizeBytes: number;
+  createdAt: Date;
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -103,12 +116,6 @@ const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
 
 const ORDER_ATTACHMENT_ALLOWED_FIELDS = ["attachment"] as const;
 const ORDER_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
-const ORDER_ATTACHMENTS_PUBLIC_DIR = path.join(
-  process.cwd(),
-  "public",
-  "uploads",
-  "orders",
-);
 
 function parseRequesterFields(formData: FormData) {
   return OrderRequesterUpdateSchema.safeParse({
@@ -158,45 +165,6 @@ function parseActionId(id: string) {
 
 function orderListPath(target: OrderListRedirectTarget): string {
   return target === "trash" ? "/trash" : "/queue";
-}
-
-function sanitizeAttachmentName(fileName: string): string {
-  const trimmed = fileName.trim();
-  if (!trimmed) {
-    return "attachment";
-  }
-
-  const normalized = trimmed.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return normalized.slice(0, 120) || "attachment";
-}
-
-function buildAttachmentStoragePaths(
-  orderId: string,
-  originalName: string,
-): { publicPath: string; diskPath: string } {
-  const safeName = sanitizeAttachmentName(originalName);
-  const extension = path.extname(safeName);
-  const uniqueFileName = `${Date.now()}-${randomUUID()}${extension}`;
-  const publicPath = `/uploads/orders/${orderId}/${uniqueFileName}`;
-  const diskPath = path.join(
-    ORDER_ATTACHMENTS_PUBLIC_DIR,
-    orderId,
-    uniqueFileName,
-  );
-
-  return {
-    publicPath,
-    diskPath,
-  };
-}
-
-function resolveAttachmentDiskPath(storagePath: string): string | null {
-  const normalizedPath = path.posix.normalize(storagePath);
-  if (!normalizedPath.startsWith("/uploads/orders/")) {
-    return null;
-  }
-
-  return path.join(process.cwd(), "public", normalizedPath.replace(/^\/+/, ""));
 }
 
 function formatValue(value: unknown): string {
@@ -400,7 +368,9 @@ export async function listOrderActivities(
   }));
 }
 
-export async function listOrderAttachments(orderId: string) {
+export async function listOrderAttachments(
+  orderId: string,
+): Promise<OrderAttachmentListItem[]> {
   await requireAuth();
 
   const parsedOrderId = parseActionId(orderId);
@@ -408,10 +378,17 @@ export async function listOrderAttachments(orderId: string) {
     return [];
   }
 
-  return prisma.orderAttachment.findMany({
+  const attachments = await prisma.orderAttachment.findMany({
     where: { orderId: parsedOrderId },
     orderBy: [{ createdAt: "desc" }],
   });
+
+  return Promise.all(
+    attachments.map(async (attachment) => ({
+      ...attachment,
+      publicUrl: await resolveOrderAttachmentPublicUrl(attachment.storagePath),
+    })),
+  );
 }
 
 export async function uploadOrderAttachment(
@@ -467,7 +444,7 @@ export async function uploadOrderAttachment(
     };
   }
 
-  let diskPathForCleanup: string | null = null;
+  let storagePathForCleanup: string | null = null;
 
   try {
     const existingOrder = await prisma.order.findFirst({
@@ -484,26 +461,25 @@ export async function uploadOrderAttachment(
       };
     }
 
-    const { publicPath, diskPath } = buildAttachmentStoragePaths(
-      parsedOrderId,
-      fileValue.name,
-    );
-
-    diskPathForCleanup = diskPath;
-    await mkdir(path.dirname(diskPath), { recursive: true });
-
     const fileBuffer = Buffer.from(await fileValue.arrayBuffer());
-    await writeFile(diskPath, fileBuffer);
+    const uploaded = await uploadOrderAttachmentObject({
+      orderId: parsedOrderId,
+      originalName: fileValue.name,
+      bytes: fileBuffer,
+      contentType: fileValue.type || null,
+    });
+    storagePathForCleanup = uploaded.storagePath;
 
     const createdAttachment = await prisma.orderAttachment.create({
       data: {
         orderId: parsedOrderId,
         originalName: fileValue.name.trim().slice(0, 200) || "attachment",
-        storagePath: publicPath,
+        storagePath: uploaded.storagePath,
         contentType: fileValue.type || null,
         sizeBytes: fileValue.size,
       },
     });
+    storagePathForCleanup = null;
 
     await createOrderActivity({
       orderId: parsedOrderId,
@@ -519,8 +495,10 @@ export async function uploadOrderAttachment(
       ],
     });
   } catch (error) {
-    if (diskPathForCleanup) {
-      await unlink(diskPathForCleanup).catch(() => undefined);
+    if (storagePathForCleanup) {
+      await deleteOrderAttachmentObject(storagePathForCleanup).catch(
+        () => undefined,
+      );
     }
 
     return {
@@ -563,11 +541,9 @@ export async function deleteOrderAttachment(
       await prisma.orderAttachment.delete({
         where: { id: parsedAttachmentId },
       });
-
-      const diskPath = resolveAttachmentDiskPath(existingAttachment.storagePath);
-      if (diskPath) {
-        await unlink(diskPath).catch(() => undefined);
-      }
+      await deleteOrderAttachmentObject(existingAttachment.storagePath).catch(
+        () => undefined,
+      );
 
       await createOrderActivity({
         orderId: parsedOrderId,

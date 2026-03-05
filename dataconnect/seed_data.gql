@@ -1,0 +1,51 @@
+mutation CreateDemoData @transaction @auth(level: USER, insecureReason: "This is a seed mutation, not intended for direct client use and safely populates data.") {
+  # Insert a sample Team
+  team1: team_insert(data: {
+    id: "f37a6b0c-8e7d-4a1b-9c0e-1f2g3h4i5j6k",
+    name: "Alpha Team",
+    teamNumber: 101,
+    contactEmail: "alpha.team@example.com",
+    coachName: "Coach Alex"
+  })
+
+  # Insert a sample Vendor
+  vendor1: vendor_insert(data: {
+    id: "a1b2c3d4-e5f6-7g8h-9i0j-1k2l3m4n5o6p",
+    name: "Global Supplies Inc.",
+    website: "https://globalsupplies.com",
+    contactEmail: "contact@globalsupplies.com",
+    phoneNumber: "555-123-4567"
+  })
+
+  # Insert an Order, linking to the previously created Team and Vendor
+  order1: order_insert(data: {
+    id: "x7y8z9a0-b1c2-d3e4-f5g6-7h8i9j0k1l2m",
+    teamId: "f37a6b0c-8e7d-4a1b-9c0e-1f2g3h4i5j6k",
+    vendorId: "a1b2c3d4-e5f6-7g8h-9i0j-1k2l3m4n5o6p",
+    orderNumber: "PO-2024-001",
+    orderDate: "2024-03-10",
+    expectedETA: "2024-03-20",
+    status: "Pending",
+    notes: "Initial order for new project."
+  })
+
+  # Insert OrderItems for the created Order
+  orderItem1: orderItem_insert(data: {
+    id: "d1e2f3g4-h5i6-j7k8-l9m0-1n2o3p4q5r6s",
+    orderId: "x7y8z9a0-b1c2-d3e4-f5g6-7h8i9j0k1l2m",
+    partName: "Widget A",
+    quantity: 100,
+    unitPrice: 1.25,
+    partNumber: "WA-001"
+  })
+
+  orderItem2: orderItem_insert(data: {
+    id: "t1u2v3w4-x5y6-z7a8-b9c0-1d2e3f4g5h6i",
+    orderId: "x7y8z9a0-b1c2-d3e4-f5g6-7h8i9j0k1l2m",
+    partName: "Sprocket B",
+    quantity: 50,
+    unitPrice: 2.50,
+    partNumber: "SB-002",
+    description: "High-grade sprockets for heavy machinery."
+  })
+}
