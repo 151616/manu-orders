@@ -10,13 +10,13 @@ export default async function UsersPage() {
   return (
     <section className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-black">Users</h1>
-        <p className="text-sm text-black/70">
+        <h1 className="text-2xl font-bold tracking-tight text-black">Users</h1>
+        <p className="text-sm text-black/65">
           User records are no longer part of authentication.
         </p>
       </header>
 
-      <div className="rounded-lg border border-black/10 bg-white p-4 text-sm text-black/75">
+      <div className="rounded-xl border border-slate-200 bg-white/95 p-4 text-sm text-black/75 shadow-sm">
         Team roles are granted by shared access codes and session claims. There is
         no editable user table in this build.
       </div>

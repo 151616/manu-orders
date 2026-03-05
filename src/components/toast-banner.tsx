@@ -10,8 +10,8 @@ type ToastBannerProps = {
 };
 
 const toastToneClass: Record<ToastTone, string> = {
-  success: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  debug: "border-sky-300 bg-sky-50 text-sky-900",
+  success: "border-emerald-300 bg-emerald-50/95 text-emerald-900",
+  debug: "border-sky-300 bg-sky-50/95 text-sky-900",
 };
 
 export function ToastBanner({ tone, message }: ToastBannerProps) {
@@ -30,9 +30,9 @@ export function ToastBanner({ tone, message }: ToastBannerProps) {
   }
 
   return (
-    <div className="pointer-events-none fixed top-4 right-4 z-50">
+    <div className="pointer-events-none fixed inset-x-3 top-3 z-50 sm:inset-auto sm:top-4 sm:right-4">
       <div
-        className={`pointer-events-auto rounded-md border px-4 py-3 text-sm shadow ${toastToneClass[tone]}`}
+        className={`pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur ${toastToneClass[tone]}`}
       >
         {message}
       </div>

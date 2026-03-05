@@ -50,3 +50,4 @@ dev.db-journal
 firebase-service-account*.json
 firebase-debug.log
 firebase-debug.*.log
+/.firebase

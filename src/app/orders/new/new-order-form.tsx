@@ -32,10 +32,13 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
     state.submittedValues[field] ?? defaults[field];
 
   return (
-    <form action={formAction} className="space-y-4 rounded-lg border border-black/10 bg-white p-6">
+    <form
+      action={formAction}
+      className="space-y-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6"
+    >
       <div>
-        <h1 className="text-2xl font-semibold text-black">Create New Order</h1>
-        <p className="text-sm text-black/70">
+        <h1 className="text-2xl font-bold tracking-tight text-black">Create New Order</h1>
+        <p className="text-sm text-black/65">
           Admins can set requester fields here. Manufacturing fields start with defaults.
         </p>
       </div>
@@ -48,7 +51,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <input
             name="title"
             defaultValue={valueFor("title")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.title ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
@@ -61,7 +64,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             name="description"
             defaultValue={valueFor("description")}
             rows={4}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.description ? (
             <p className="mt-1 text-xs text-red-600">
@@ -75,7 +78,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <input
             name="requesterName"
             defaultValue={valueFor("requesterName")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.requesterName ? (
             <p className="mt-1 text-xs text-red-600">
@@ -91,7 +94,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <input
             name="requesterContact"
             defaultValue={valueFor("requesterContact")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.requesterContact ? (
             <p className="mt-1 text-xs text-red-600">
@@ -105,7 +108,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <input
             name="vendor"
             defaultValue={valueFor("vendor")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.vendor ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.vendor}</p>
@@ -117,7 +120,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <input
             name="orderNumber"
             defaultValue={valueFor("orderNumber")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.orderNumber ? (
             <p className="mt-1 text-xs text-red-600">
@@ -132,7 +135,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             name="orderUrl"
             defaultValue={valueFor("orderUrl")}
             placeholder="https://"
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.orderUrl ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.orderUrl}</p>
@@ -146,7 +149,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             type="number"
             min={1}
             defaultValue={valueFor("quantity")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.quantity ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.quantity}</p>
@@ -158,7 +161,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <select
             name="category"
             defaultValue={valueFor("category")}
-            className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           >
             {ORDER_CATEGORIES.map((category) => (
               <option key={category} value={category}>

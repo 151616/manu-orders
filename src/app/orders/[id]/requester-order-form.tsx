@@ -22,8 +22,11 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
     state.submittedValues[field] ?? fallback;
 
   return (
-    <form action={formAction} className="space-y-4 rounded-lg border border-black/10 bg-white p-6">
-      <h2 className="text-lg font-semibold text-black">Requester Fields</h2>
+    <form
+      action={formAction}
+      className="space-y-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6"
+    >
+      <h2 className="text-lg font-semibold tracking-tight text-black">Requester Fields</h2>
 
       {state.error ? <FormMessage tone="error" message={state.error} /> : null}
 
@@ -33,7 +36,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
           <input
             name="title"
             defaultValue={valueFor("title", order.title)}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.title ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
@@ -46,7 +49,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
             name="description"
             rows={4}
             defaultValue={valueFor("description", order.description ?? "")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.description ? (
             <p className="mt-1 text-xs text-red-600">
@@ -60,7 +63,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
           <input
             name="requesterName"
             defaultValue={valueFor("requesterName", order.requesterName)}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.requesterName ? (
             <p className="mt-1 text-xs text-red-600">
@@ -76,7 +79,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
           <input
             name="requesterContact"
             defaultValue={valueFor("requesterContact", order.requesterContact ?? "")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.requesterContact ? (
             <p className="mt-1 text-xs text-red-600">
@@ -90,7 +93,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
           <input
             name="vendor"
             defaultValue={valueFor("vendor", order.vendor ?? "")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.vendor ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.vendor}</p>
@@ -102,7 +105,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
           <input
             name="orderNumber"
             defaultValue={valueFor("orderNumber", order.orderNumber ?? "")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.orderNumber ? (
             <p className="mt-1 text-xs text-red-600">
@@ -116,7 +119,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
           <input
             name="orderUrl"
             defaultValue={valueFor("orderUrl", order.orderUrl ?? "")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.orderUrl ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.orderUrl}</p>
@@ -130,7 +133,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
             type="number"
             min={1}
             defaultValue={valueFor("quantity", order.quantity?.toString() ?? "")}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.quantity ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.quantity}</p>
@@ -142,7 +145,7 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
           <select
             name="category"
             defaultValue={valueFor("category", order.category)}
-            className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           >
             {ORDER_CATEGORIES.map((category) => (
               <option key={category} value={category}>

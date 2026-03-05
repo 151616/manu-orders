@@ -71,7 +71,7 @@ export function QueueRuntime({ monitor }: QueueRuntimeProps) {
     <button
       type="button"
       onClick={toggleFullscreen}
-      className="rounded-md border border-black/20 bg-white px-3 py-2 text-sm font-medium text-black hover:bg-black/5"
+      className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
     >
       {isFullscreen ? "Exit Full Screen" : "Full Screen"}
     </button>

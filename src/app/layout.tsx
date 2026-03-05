@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TopNav } from "@/components/top-nav";
+import { FirebaseAnalyticsBootstrap } from "@/components/firebase-analytics-bootstrap";
 import { getSession } from "@/lib/auth";
 
 const geistSans = Geist({
@@ -29,10 +30,13 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-slate-50 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
+        <FirebaseAnalyticsBootstrap />
         {user ? <TopNav user={user} /> : null}
-        <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
+        <main className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
+          {children}
+        </main>
       </body>
     </html>
   );

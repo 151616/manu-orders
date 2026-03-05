@@ -31,8 +31,11 @@ export function ManufacturingOrderForm({
     : order.priority;
 
   return (
-    <form action={formAction} className="space-y-4 rounded-lg border border-black/10 bg-white p-6">
-      <h2 className="text-lg font-semibold text-black">Manufacturing Fields</h2>
+    <form
+      action={formAction}
+      className="space-y-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6"
+    >
+      <h2 className="text-lg font-semibold tracking-tight text-black">Manufacturing Fields</h2>
 
       {state.error ? <FormMessage tone="error" message={state.error} /> : null}
 
@@ -52,7 +55,7 @@ export function ManufacturingOrderForm({
             type="number"
             min={0}
             defaultValue={valueFor("etaDays", defaultEtaDays.toString())}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.etaDays ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.etaDays}</p>
@@ -64,7 +67,7 @@ export function ManufacturingOrderForm({
           <select
             name="status"
             defaultValue={valueFor("status", order.status)}
-            className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           >
             {ORDER_STATUSES.map((status) => (
               <option key={status} value={status}>
@@ -85,7 +88,7 @@ export function ManufacturingOrderForm({
             name="notesFromManu"
             defaultValue={valueFor("notesFromManu", order.notesFromManu ?? "")}
             rows={4}
-            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
           {state.fieldErrors.notesFromManu ? (
             <p className="mt-1 text-xs text-red-600">

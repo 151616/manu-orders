@@ -112,6 +112,22 @@ npx prisma migrate deploy
 npm run build
 ```
 
+## Optional Firebase Web SDK (Analytics)
+
+If you want browser analytics, set these in `.env` (from Firebase console web app config):
+
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
+```
+
+The app initializes analytics only when these values are present.
+
 ## Ops Runbook
 
 - Backup/restore procedures: `docs/ops.md`

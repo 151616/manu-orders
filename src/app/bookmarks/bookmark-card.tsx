@@ -22,13 +22,13 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
     state.submittedValues[field] ?? fallback;
 
   return (
-    <article className="space-y-3 rounded-lg border border-black/10 bg-white p-4">
+    <article className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-base font-semibold text-black">{bookmark.name}</h3>
+        <h3 className="text-base font-semibold tracking-tight text-black">{bookmark.name}</h3>
         {canMutate ? (
           <Link
             href={`/orders/new?fromBookmark=${bookmark.id}`}
-            className="rounded-md border border-black/20 px-3 py-1 text-xs font-medium text-black hover:bg-black/5"
+            className="w-full rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
           >
             Create Order From Bookmark
           </Link>
@@ -45,7 +45,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               <input
                 name="name"
                 defaultValue={valueFor("name", bookmark.name)}
-                className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.name ? (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.name}</p>
@@ -59,7 +59,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               <input
                 name="defaultVendor"
                 defaultValue={valueFor("defaultVendor", bookmark.defaultVendor ?? "")}
-                className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.defaultVendor ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -75,7 +75,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               <select
                 name="defaultCategory"
                 defaultValue={valueFor("defaultCategory", bookmark.defaultCategory ?? "")}
-                className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+                className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               >
                 <option value="">None</option>
                 {ORDER_CATEGORIES.map((category) => (
@@ -98,7 +98,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               <input
                 name="defaultOrderUrl"
                 defaultValue={valueFor("defaultOrderUrl", bookmark.defaultOrderUrl ?? "")}
-                className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.defaultOrderUrl ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -115,7 +115,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
                 name="defaultDescription"
                 rows={3}
                 defaultValue={valueFor("defaultDescription", bookmark.defaultDescription ?? "")}
-                className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.defaultDescription ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -124,7 +124,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               ) : null}
             </label>
 
-            <div className="sm:col-span-2 flex items-center gap-2">
+            <div className="sm:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center">
               <SubmitButton idleLabel="Save Bookmark" pendingLabel="Saving..." />
             </div>
           </form>
@@ -133,7 +133,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
             <SubmitButton
               idleLabel="Move to Trash"
               pendingLabel="Moving..."
-              className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             />
           </form>
         </>

@@ -19,10 +19,10 @@ export function ElevateForm() {
   return (
     <form
       action={formAction}
-      className="w-full max-w-md space-y-4 rounded-lg border border-black/10 bg-white p-6 shadow-sm"
+      className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
     >
-      <h1 className="text-2xl font-semibold text-black">Elevate to Admin</h1>
-      <p className="text-sm text-black/70">
+      <h2 className="text-2xl font-bold tracking-tight text-black">Elevate to Admin</h2>
+      <p className="text-sm text-black/65">
         Enter the shared codes to upgrade this session to ADMIN.
       </p>
 
@@ -33,7 +33,7 @@ export function ElevateForm() {
           name="accessCode"
           autoComplete="off"
           required
-          className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           placeholder="Enter shared code"
         />
       </label>
@@ -45,13 +45,13 @@ export function ElevateForm() {
           name="adminCode"
           autoComplete="off"
           required
-          className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           placeholder="Enter admin code"
         />
       </label>
 
       {state.error ? (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
           {state.error}
         </p>
       ) : null}
@@ -59,7 +59,7 @@ export function ElevateForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-md bg-black px-3 py-2.5 text-sm font-semibold text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Elevating..." : "Elevate Session"}
       </button>

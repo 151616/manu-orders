@@ -52,8 +52,8 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
   return (
     <section className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-black">Bookmarks</h1>
-        <p className="text-sm text-black/70">
+        <h1 className="text-2xl font-bold tracking-tight text-black">Bookmarks</h1>
+        <p className="text-sm text-black/65">
           {canMutate
             ? "Manage your personal order templates and create orders from them."
             : "Read-only bookmark templates for your account."}
@@ -66,7 +66,7 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
 
       <div className="space-y-3">
         {bookmarks.length === 0 ? (
-          <p className="rounded-lg border border-black/10 bg-white p-6 text-sm text-black/70">
+          <p className="rounded-xl border border-slate-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm">
             No bookmarks yet.
           </p>
         ) : (
@@ -81,7 +81,7 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
       </div>
 
       {canMutate ? (
-        <div className="space-y-3 rounded-lg border border-black/10 bg-white p-4">
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
           <h2 className="text-lg font-semibold text-black">Trash</h2>
           {deletedBookmarks.length === 0 ? (
             <p className="text-sm text-black/70">No deleted bookmarks.</p>
@@ -97,7 +97,7 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
                 return (
                   <li
                     key={bookmark.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-black/10 bg-slate-50 px-3 py-2"
+                    className="flex flex-col items-start gap-2 rounded-md border border-black/10 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="text-sm font-medium text-black">{bookmark.name}</p>
@@ -105,11 +105,11 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
                         Deleted on {bookmark.updatedAt.toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                       <form action={restoreAction}>
                         <button
                           type="submit"
-                          className="rounded-md border border-black/20 bg-white px-3 py-1 text-xs font-medium text-black hover:bg-black/5"
+                          className="w-full rounded-lg border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
                         >
                           Restore
                         </button>
@@ -117,7 +117,7 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
                       <form action={permanentDeleteAction}>
                         <button
                           type="submit"
-                          className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                          className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto"
                         >
                           Permanently Delete
                         </button>

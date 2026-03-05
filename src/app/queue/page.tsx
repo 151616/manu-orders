@@ -116,38 +116,44 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   });
 
   return (
-    <section className={isMonitor ? "space-y-4" : "space-y-6"}>
+    <section className={isMonitor ? "space-y-4" : "space-y-5 sm:space-y-6"}>
       {toast ? <ToastBanner tone={toastTone} message={toast} /> : null}
       {showUndo && undoRemoveAction ? (
         <form
           action={undoRemoveAction}
-          className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+          className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
         >
           <p>Order moved to trash. Undo?</p>
           <button
             type="submit"
-            className="rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            className="w-full rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 sm:w-auto"
           >
             Restore
           </button>
         </form>
       ) : null}
 
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className={isMonitor ? "text-3xl font-bold text-black" : "text-2xl font-semibold text-black"}>
+          <h1
+            className={
+              isMonitor
+                ? "text-3xl font-bold tracking-tight text-black"
+                : "text-2xl font-bold tracking-tight text-black"
+            }
+          >
             Queue
           </h1>
-          <p className={isMonitor ? "text-base text-black/70" : "text-sm text-black/70"}>
+          <p className={isMonitor ? "text-base text-black/65" : "text-sm text-black/65"}>
             Auto-refresh every 15 seconds.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           {user.role === "ADMIN" ? (
             <a
               href="/orders/export.csv"
-              className="rounded-md border border-black/20 bg-white px-3 py-2 text-sm font-medium text-black hover:bg-black/5"
+              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
             >
               Export Orders CSV
             </a>
@@ -156,14 +162,14 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
           {isMonitor ? (
             <Link
               href={buildQueueHref(baseQuery)}
-              className="rounded-md border border-black/20 bg-white px-3 py-2 text-sm font-medium text-black hover:bg-black/5"
+              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
             >
               Exit Monitor
             </Link>
           ) : (
             <Link
               href={buildQueueHref({ ...baseQuery, monitor: "1" })}
-              className="rounded-md border border-black/20 bg-white px-3 py-2 text-sm font-medium text-black hover:bg-black/5"
+              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
             >
               Monitor Mode
             </Link>
@@ -176,7 +182,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                 monitor: "1",
                 filters: showFilters ? undefined : "1",
               })}
-              className="rounded-md border border-black/20 bg-white px-3 py-2 text-sm font-medium text-black hover:bg-black/5"
+              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
             >
               {showFilters ? "Hide Filters" : "Show Filters"}
             </Link>
@@ -188,7 +194,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
 
       {showFilters ? (
         <form
-          className="grid gap-2 rounded-lg border border-black/10 bg-white p-3 sm:grid-cols-4"
+          className="grid gap-3 rounded-xl border border-slate-200/80 bg-white/95 p-4 shadow-sm sm:grid-cols-4"
           action="/queue"
         >
           {isMonitor ? <input type="hidden" name="monitor" value="1" /> : null}
@@ -203,7 +209,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
               name="search"
               defaultValue={search}
               placeholder="Title, order number, requester"
-              className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             />
           </label>
 
@@ -214,7 +220,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
             <select
               name="status"
               defaultValue={status}
-              className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             >
               <option value="ALL">All</option>
               {ORDER_STATUSES.map((item) => (
@@ -232,7 +238,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
             <select
               name="category"
               defaultValue={category}
-              className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             >
               <option value="ALL">All</option>
               {ORDER_CATEGORIES.map((item) => (
@@ -243,10 +249,10 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
             </select>
           </label>
 
-          <div className="sm:col-span-4 flex items-center gap-2">
+          <div className="sm:col-span-4 flex flex-col gap-2 sm:flex-row sm:items-center">
             <button
               type="submit"
-              className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90"
+              className="w-full rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-black/90 sm:w-auto"
             >
               Apply
             </button>
@@ -254,7 +260,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
               href={buildQueueHref(
                 isMonitor ? { monitor: "1", filters: "1" } : {},
               )}
-              className="rounded-md border border-black/20 px-4 py-2 text-sm font-medium text-black hover:bg-black/5"
+              className="w-full rounded-lg border border-black/20 px-4 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
             >
               Reset
             </Link>
@@ -263,7 +269,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
       ) : null}
 
       {orders.length === 0 ? (
-        <p className="rounded-lg border border-black/10 bg-white p-6 text-sm text-black/70">
+        <p className="rounded-xl border border-slate-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm">
           No orders found.
         </p>
       ) : (
@@ -290,14 +296,14 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                   isOverdue
                     ? isMonitor
                       ? "space-y-4 rounded-xl border border-red-200 bg-red-50 p-5 transition hover:border-red-300 hover:shadow-sm"
-                      : "space-y-3 rounded-lg border border-red-200 bg-red-50 p-4 transition hover:border-red-300 hover:shadow-sm"
+                      : "space-y-3 rounded-xl border border-red-200 bg-red-50/95 p-4 shadow-sm transition hover:border-red-300 hover:shadow-md"
                     : isDueSoon
                       ? isMonitor
-                        ? "space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-5 transition hover:border-amber-300 hover:shadow-sm"
-                        : "space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 transition hover:border-amber-300 hover:shadow-sm"
+                        ? "space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm transition hover:border-amber-300 hover:shadow-md"
+                        : "space-y-3 rounded-xl border border-amber-200 bg-amber-50/95 p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md"
                       : isMonitor
-                        ? "space-y-4 rounded-xl border border-black/10 bg-white p-5 transition hover:border-black/30 hover:shadow-sm"
-                        : "space-y-3 rounded-lg border border-black/10 bg-white p-4 transition hover:border-black/30 hover:shadow-sm"
+                        ? "space-y-4 rounded-xl border border-slate-200 bg-white/95 p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                        : "space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
                 }
               >
                 <Link href={`/orders/${order.id}`} className="block space-y-3">
@@ -305,8 +311,8 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                     <h2
                       className={
                         isMonitor
-                          ? "text-xl font-semibold text-black"
-                          : "text-base font-semibold text-black"
+                        ? "text-xl font-semibold text-black"
+                          : "text-base font-semibold leading-snug text-black"
                       }
                     >
                       {order.title}
@@ -318,11 +324,11 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                     className={
                       isMonitor
                         ? "grid grid-cols-2 gap-3 text-base text-black/85"
-                        : "grid grid-cols-2 gap-2 text-sm text-black/80"
+                        : "grid grid-cols-1 gap-2 text-sm text-black/80 sm:grid-cols-2"
                     }
                   >
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-black/50">
+                      <p className="text-[11px] uppercase tracking-wide text-black/50">
                         Priority
                       </p>
                       <PriorityStarsDisplay
@@ -331,7 +337,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       />
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-black/50">
+                      <p className="text-[11px] uppercase tracking-wide text-black/50">
                         ETA
                       </p>
                       {isOverdue ? (
@@ -347,13 +353,13 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       )}
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-black/50">
+                      <p className="text-[11px] uppercase tracking-wide text-black/50">
                         Category
                       </p>
                       <p>{ORDER_CATEGORY_LABELS[order.category]}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-black/50">
+                      <p className="text-[11px] uppercase tracking-wide text-black/50">
                         Order Number
                       </p>
                       <p>{order.orderNumber ?? "N/A"}</p>
@@ -368,7 +374,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                   >
                     <button
                       type="submit"
-                      className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                      className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto"
                     >
                       Move to Trash
                     </button>

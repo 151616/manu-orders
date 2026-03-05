@@ -1,4 +1,20 @@
 {
+  "hosting": {
+    "site": "manuqueue",
+    "public": "hosting-redirect",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "**",
+        "destination": "https://manuqueue--manuqueue.us-central1.hosted.app",
+        "type": 302
+      }
+    ]
+  },
   "apphosting": [
     {
       "backendId": "manuqueue",
