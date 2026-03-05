@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum OrderCategory {
+  CNC
+  PRINT_3D
+  LASER
+  ASSEMBLY
+  ELECTRICAL
+  OTHER
+}
+
+enum OrderStatus {
+  NEW
+  QUEUED
+  IN_PROGRESS
+  WAITING_ON_PARTS
+  DONE
+  BLOCKED
+  CANCELLED
+}
+
+model Order {
+  id               String        @id @default(uuid())
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  title            String
+  description      String?
+  requesterName    String
+  requesterContact String?
+  vendor           String?
+  orderNumber      String?
+  orderUrl         String?
+  quantity         Int?
+  category         OrderCategory
+  priority         Int           @default(3)
+  etaDays          Int           @default(10)
+  etaTargetDate    DateTime?
+  status           OrderStatus   @default(NEW)
+  notesFromManu    String?
+  createdByLabel   String?
+  activities       OrderActivity[]
+}
+
+model Bookmark {
+  id                 String         @id @default(uuid())
+  name               String
+  defaultVendor      String?
+  defaultOrderUrl    String?
+  defaultCategory    OrderCategory?
+  defaultDescription String?
+  createdByLabel     String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([createdByLabel, createdAt])
+}
+
+model OrderActivity {
+  id         String   @id @default(uuid())
+  orderId    String
+  actorLabel String
+  createdAt  DateTime @default(now())
+  action     String
+  details    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@index([actorLabel])
+}
+
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  email     String
+  ipAddress String
+  createdAt DateTime @default(now())
+  success   Boolean  @default(false)
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+}

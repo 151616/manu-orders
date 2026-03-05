@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ManuQueue
 
-## Getting Started
+ManuQueue is a responsive Next.js app skeleton for manufacturing order intake and queue tracking.
 
-First, run the development server:
+## Tech
+
+- Next.js (App Router) + TypeScript + Tailwind CSS
+- Prisma ORM + SQLite (local development)
+- Zod validation
+- Shared team access-code auth with signed cookie sessions
+
+## Setup Commands
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Configure environment variables:
+
+```bash
+copy .env.example .env
+```
+
+Set access codes in `.env`:
+
+```bash
+TEAM_ACCESS_CODE=your-shared-team-code
+TEAM_MANU_CODE=your-manufacturing-code
+```
+
+3. Create and apply migration:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+4. Seed demo data:
+
+```bash
+npx prisma db seed
+```
+
+5. Start local development:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Login Method
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/login` uses a single `Team Access Code` input plus a role selector.
+- `REQUESTER` login requires `TEAM_ACCESS_CODE`.
+- `MANUFACTURING` login requires both `TEAM_ACCESS_CODE` and `TEAM_MANU_CODE`.
+- Sessions are JWT cookies and carry the selected role.
 
-## Learn More
+## Protected Routes
 
-To learn more about Next.js, take a look at the following resources:
+- `/queue`
+- `/orders/new`
+- `/orders/[id]`
+- `/bookmarks`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Unauthenticated users are redirected to `/login`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Server Auth Helpers
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `getCurrentUser()`
+- `requireAuth()`
+- `requireRole("MANUFACTURING")`

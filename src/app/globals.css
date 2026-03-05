@@ -22,5 +22,14 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+body[data-monitor-mode="1"] > header {
+  display: none;
+}
+
+body[data-monitor-mode="1"] > main {
+  max-width: 100%;
+  padding: 0.75rem;
 }

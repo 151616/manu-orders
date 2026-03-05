@@ -1,0 +1,176 @@
+"use client";
+
+import { useActionState } from "react";
+import { createOrder } from "@/app/orders/actions";
+import { FormMessage } from "@/components/form-message";
+import { SubmitButton } from "@/components/submit-button";
+import {
+  ORDER_CATEGORIES,
+  ORDER_CATEGORY_LABELS,
+} from "@/lib/order-domain";
+import { EMPTY_FORM_STATE } from "@/lib/form-utils";
+
+type NewOrderDefaults = {
+  title: string;
+  description: string;
+  requesterName: string;
+  requesterContact: string;
+  vendor: string;
+  orderNumber: string;
+  orderUrl: string;
+  quantity: string;
+  category: string;
+};
+
+type NewOrderFormProps = {
+  defaults: NewOrderDefaults;
+};
+
+export function NewOrderForm({ defaults }: NewOrderFormProps) {
+  const [state, formAction] = useActionState(createOrder, EMPTY_FORM_STATE);
+
+  return (
+    <form action={formAction} className="space-y-4 rounded-lg border border-black/10 bg-white p-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-black">Create New Order</h1>
+        <p className="text-sm text-black/70">
+          Requesters can set requester fields only. Manufacturing fields start with defaults.
+        </p>
+      </div>
+
+      {state.error ? <FormMessage tone="error" message={state.error} /> : null}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="sm:col-span-2">
+          <span className="mb-1 block text-sm font-medium text-black">Title</span>
+          <input
+            name="title"
+            defaultValue={defaults.title}
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.title ? (
+            <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
+          ) : null}
+        </label>
+
+        <label className="sm:col-span-2">
+          <span className="mb-1 block text-sm font-medium text-black">Description</span>
+          <textarea
+            name="description"
+            defaultValue={defaults.description}
+            rows={4}
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.description ? (
+            <p className="mt-1 text-xs text-red-600">
+              {state.fieldErrors.description}
+            </p>
+          ) : null}
+        </label>
+
+        <label>
+          <span className="mb-1 block text-sm font-medium text-black">Requester Name</span>
+          <input
+            name="requesterName"
+            defaultValue={defaults.requesterName}
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.requesterName ? (
+            <p className="mt-1 text-xs text-red-600">
+              {state.fieldErrors.requesterName}
+            </p>
+          ) : null}
+        </label>
+
+        <label>
+          <span className="mb-1 block text-sm font-medium text-black">
+            Requester Contact
+          </span>
+          <input
+            name="requesterContact"
+            defaultValue={defaults.requesterContact}
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.requesterContact ? (
+            <p className="mt-1 text-xs text-red-600">
+              {state.fieldErrors.requesterContact}
+            </p>
+          ) : null}
+        </label>
+
+        <label>
+          <span className="mb-1 block text-sm font-medium text-black">Vendor</span>
+          <input
+            name="vendor"
+            defaultValue={defaults.vendor}
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.vendor ? (
+            <p className="mt-1 text-xs text-red-600">{state.fieldErrors.vendor}</p>
+          ) : null}
+        </label>
+
+        <label>
+          <span className="mb-1 block text-sm font-medium text-black">Order Number</span>
+          <input
+            name="orderNumber"
+            defaultValue={defaults.orderNumber}
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.orderNumber ? (
+            <p className="mt-1 text-xs text-red-600">
+              {state.fieldErrors.orderNumber}
+            </p>
+          ) : null}
+        </label>
+
+        <label className="sm:col-span-2">
+          <span className="mb-1 block text-sm font-medium text-black">Order URL</span>
+          <input
+            name="orderUrl"
+            defaultValue={defaults.orderUrl}
+            placeholder="https://"
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.orderUrl ? (
+            <p className="mt-1 text-xs text-red-600">{state.fieldErrors.orderUrl}</p>
+          ) : null}
+        </label>
+
+        <label>
+          <span className="mb-1 block text-sm font-medium text-black">Quantity</span>
+          <input
+            name="quantity"
+            type="number"
+            min={1}
+            defaultValue={defaults.quantity}
+            className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          />
+          {state.fieldErrors.quantity ? (
+            <p className="mt-1 text-xs text-red-600">{state.fieldErrors.quantity}</p>
+          ) : null}
+        </label>
+
+        <label>
+          <span className="mb-1 block text-sm font-medium text-black">Category</span>
+          <select
+            name="category"
+            defaultValue={defaults.category}
+            className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
+          >
+            {ORDER_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {ORDER_CATEGORY_LABELS[category]}
+              </option>
+            ))}
+          </select>
+          {state.fieldErrors.category ? (
+            <p className="mt-1 text-xs text-red-600">{state.fieldErrors.category}</p>
+          ) : null}
+        </label>
+      </div>
+
+      <SubmitButton idleLabel="Create Order" pendingLabel="Creating..." />
+    </form>
+  );
+}
