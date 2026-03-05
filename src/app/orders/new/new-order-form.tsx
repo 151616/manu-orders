@@ -28,13 +28,15 @@ type NewOrderFormProps = {
 
 export function NewOrderForm({ defaults }: NewOrderFormProps) {
   const [state, formAction] = useActionState(createOrder, EMPTY_FORM_STATE);
+  const valueFor = (field: keyof NewOrderDefaults) =>
+    state.submittedValues[field] ?? defaults[field];
 
   return (
     <form action={formAction} className="space-y-4 rounded-lg border border-black/10 bg-white p-6">
       <div>
         <h1 className="text-2xl font-semibold text-black">Create New Order</h1>
         <p className="text-sm text-black/70">
-          Requesters can set requester fields only. Manufacturing fields start with defaults.
+          Admins can set requester fields here. Manufacturing fields start with defaults.
         </p>
       </div>
 
@@ -45,7 +47,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <span className="mb-1 block text-sm font-medium text-black">Title</span>
           <input
             name="title"
-            defaultValue={defaults.title}
+            defaultValue={valueFor("title")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.title ? (
@@ -57,7 +59,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <span className="mb-1 block text-sm font-medium text-black">Description</span>
           <textarea
             name="description"
-            defaultValue={defaults.description}
+            defaultValue={valueFor("description")}
             rows={4}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
@@ -72,7 +74,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <span className="mb-1 block text-sm font-medium text-black">Requester Name</span>
           <input
             name="requesterName"
-            defaultValue={defaults.requesterName}
+            defaultValue={valueFor("requesterName")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.requesterName ? (
@@ -88,7 +90,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           </span>
           <input
             name="requesterContact"
-            defaultValue={defaults.requesterContact}
+            defaultValue={valueFor("requesterContact")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.requesterContact ? (
@@ -102,7 +104,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <span className="mb-1 block text-sm font-medium text-black">Vendor</span>
           <input
             name="vendor"
-            defaultValue={defaults.vendor}
+            defaultValue={valueFor("vendor")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.vendor ? (
@@ -114,7 +116,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <span className="mb-1 block text-sm font-medium text-black">Order Number</span>
           <input
             name="orderNumber"
-            defaultValue={defaults.orderNumber}
+            defaultValue={valueFor("orderNumber")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.orderNumber ? (
@@ -128,7 +130,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <span className="mb-1 block text-sm font-medium text-black">Order URL</span>
           <input
             name="orderUrl"
-            defaultValue={defaults.orderUrl}
+            defaultValue={valueFor("orderUrl")}
             placeholder="https://"
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
@@ -143,7 +145,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             name="quantity"
             type="number"
             min={1}
-            defaultValue={defaults.quantity}
+            defaultValue={valueFor("quantity")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.quantity ? (
@@ -155,7 +157,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <span className="mb-1 block text-sm font-medium text-black">Category</span>
           <select
             name="category"
-            defaultValue={defaults.category}
+            defaultValue={valueFor("category")}
             className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           >
             {ORDER_CATEGORIES.map((category) => (

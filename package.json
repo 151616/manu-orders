@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:backup": "node scripts/ops/backup-sqlite.mjs",
+    "db:restore": "node scripts/ops/restore-sqlite.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

@@ -26,8 +26,8 @@ copy .env.example .env
 Set access codes in `.env`:
 
 ```bash
-TEAM_ACCESS_CODE=your-shared-team-code
-TEAM_MANU_CODE=your-manufacturing-code
+TEAM_ACCESS_CODE=your-viewer-code
+TEAM_ADMIN_CODE=your-admin-code
 ```
 
 3. Create and apply migration:
@@ -52,14 +52,16 @@ Visit `http://localhost:3000`.
 
 ## Login Method
 
-- `/login` uses a single `Team Access Code` input plus a role selector.
-- `REQUESTER` login requires `TEAM_ACCESS_CODE`.
-- `MANUFACTURING` login requires both `TEAM_ACCESS_CODE` and `TEAM_MANU_CODE`.
+- `/login` uses a role selector plus one code input.
+- `VIEWER` login checks only `TEAM_ACCESS_CODE`.
+- `ADMIN` login checks only `TEAM_ADMIN_CODE` (fallback: `TEAM_MANU_CODE`).
+- Logged-in viewers can use `/elevate` to switch the current session to `ADMIN`.
 - Sessions are JWT cookies and carry the selected role.
 
 ## Protected Routes
 
 - `/queue`
+- `/elevate`
 - `/orders/new`
 - `/orders/[id]`
 - `/bookmarks`
@@ -68,6 +70,13 @@ Unauthenticated users are redirected to `/login`.
 
 ## Server Auth Helpers
 
-- `getCurrentUser()`
+- `getSession()`
 - `requireAuth()`
-- `requireRole("MANUFACTURING")`
+- `requireRole("ADMIN")`
+- `requireAdmin()`
+
+## Ops Runbook
+
+- Backup/restore procedures (SQLite + Postgres examples): `docs/ops.md`
+- Backup command: `npm run db:backup`
+- Restore command: `npm run db:restore -- --archive <path-to-zip>`

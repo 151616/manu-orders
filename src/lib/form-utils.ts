@@ -4,13 +4,29 @@ export type FormActionState = {
   success: string | null;
   error: string | null;
   fieldErrors: Record<string, string>;
+  submittedValues: Record<string, string>;
 };
 
 export const EMPTY_FORM_STATE: FormActionState = {
   success: null,
   error: null,
   fieldErrors: {},
+  submittedValues: {},
 };
+
+export function collectSubmittedValues(
+  formData: FormData,
+  allowedFields: readonly string[],
+): Record<string, string> {
+  const submittedValues: Record<string, string> = {};
+
+  allowedFields.forEach((field) => {
+    const raw = formData.get(field);
+    submittedValues[field] = typeof raw === "string" ? raw : "";
+  });
+
+  return submittedValues;
+}
 
 export function getTrimmedString(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";

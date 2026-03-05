@@ -42,6 +42,7 @@ model Order {
   etaDays          Int           @default(10)
   etaTargetDate    DateTime?
   status           OrderStatus   @default(NEW)
+  isDeleted        Boolean       @default(false)
   notesFromManu    String?
   createdByLabel   String?
   activities       OrderActivity[]
@@ -54,33 +55,36 @@ model Bookmark {
   defaultOrderUrl    String?
   defaultCategory    OrderCategory?
   defaultDescription String?
+  isDeleted          Boolean       @default(false)
   createdByLabel     String
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
-  @@index([createdByLabel, createdAt])
+  @@index([createdByLabel, isDeleted, createdAt])
 }
 
 model OrderActivity {
-  id         String   @id @default(uuid())
-  orderId    String
-  actorLabel String
-  createdAt  DateTime @default(now())
-  action     String
-  details    String
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      String   @id @default(uuid())
+  orderId String?
+  at      DateTime @default(now())
+  role    String
+  action  String
+  details String
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  @@index([orderId, createdAt])
-  @@index([actorLabel])
+  @@index([orderId, at])
+  @@index([role, at])
 }
 
 model LoginAttempt {
   id        String   @id @default(uuid())
+  scope     String   @default("login")
   email     String
   ipAddress String
   createdAt DateTime @default(now())
   success   Boolean  @default(false)
 
+  @@index([scope, ipAddress, createdAt])
   @@index([email, createdAt])
   @@index([ipAddress, createdAt])
 }

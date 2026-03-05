@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
@@ -92,14 +92,14 @@ export async function requireRole(role: UserRoleValue): Promise<AuthUser> {
   const user = await requireAuth();
 
   if (user.role !== role) {
-    throw new Error("Forbidden");
+    forbidden();
   }
 
   return user;
 }
 
-export async function requireManufacturing(): Promise<AuthUser> {
-  return requireRole("MANUFACTURING");
+export async function requireAdmin(): Promise<AuthUser> {
+  return requireRole("ADMIN");
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {

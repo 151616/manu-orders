@@ -1,9 +1,11 @@
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const MAX_FAILED_ATTEMPTS_PER_IP = 20;
-const MAX_FAILED_ATTEMPTS_PER_EMAIL = 8;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const MAX_FAILED_ATTEMPTS_PER_SCOPE_IP = 8;
+
+export const AUTH_ATTEMPT_SCOPES = ["login", "elevate"] as const;
+export type AuthAttemptScope = (typeof AUTH_ATTEMPT_SCOPES)[number];
 
 export async function getRequestIpAddress(): Promise<string> {
   const headerStore = await headers();
@@ -26,36 +28,57 @@ export function normalizeLoginEmail(email: string): string {
   return normalized.length > 0 ? normalized : "<invalid-email>";
 }
 
-export async function isLoginRateLimited({
-  email,
+export async function isAuthAttemptRateLimited({
+  scope,
   ipAddress,
 }: {
-  email: string;
+  scope: AuthAttemptScope;
   ipAddress: string;
 }): Promise<boolean> {
   const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
 
-  const [ipFailures, emailFailures] = await Promise.all([
-    prisma.loginAttempt.count({
-      where: {
-        success: false,
-        ipAddress,
-        createdAt: { gte: windowStart },
-      },
-    }),
-    prisma.loginAttempt.count({
-      where: {
-        success: false,
-        email,
-        createdAt: { gte: windowStart },
-      },
-    }),
-  ]);
+  const ipFailuresForScope = await prisma.loginAttempt.count({
+    where: {
+      success: false,
+      scope,
+      ipAddress,
+      createdAt: { gte: windowStart },
+    },
+  });
 
-  return (
-    ipFailures >= MAX_FAILED_ATTEMPTS_PER_IP ||
-    emailFailures >= MAX_FAILED_ATTEMPTS_PER_EMAIL
-  );
+  return ipFailuresForScope >= MAX_FAILED_ATTEMPTS_PER_SCOPE_IP;
+}
+
+export async function recordAuthAttempt({
+  scope,
+  key,
+  ipAddress,
+  success,
+}: {
+  scope: AuthAttemptScope;
+  key: string;
+  ipAddress: string;
+  success: boolean;
+}) {
+  await prisma.loginAttempt.create({
+    data: {
+      scope,
+      email: key,
+      ipAddress,
+      success,
+    },
+  });
+}
+
+export async function isLoginRateLimited({
+  ipAddress,
+}: {
+  ipAddress: string;
+}) {
+  return isAuthAttemptRateLimited({
+    scope: "login",
+    ipAddress,
+  });
 }
 
 export async function recordLoginAttempt({
@@ -67,11 +90,10 @@ export async function recordLoginAttempt({
   ipAddress: string;
   success: boolean;
 }) {
-  await prisma.loginAttempt.create({
-    data: {
-      email,
-      ipAddress,
-      success,
-    },
+  await recordAuthAttempt({
+    scope: "login",
+    key: email,
+    ipAddress,
+    success,
   });
 }

@@ -20,6 +20,15 @@ export function ManufacturingOrderForm({
 }: ManufacturingOrderFormProps) {
   const updateAction = updateOrderManufacturingFields.bind(null, order.id);
   const [state, formAction] = useActionState(updateAction, EMPTY_FORM_STATE);
+  const valueFor = (field: string, fallback: string) =>
+    state.submittedValues[field] ?? fallback;
+  const submittedPriority = Number.parseInt(
+    state.submittedValues.priority ?? "",
+    10,
+  );
+  const priorityDefaultValue = Number.isInteger(submittedPriority)
+    ? submittedPriority
+    : order.priority;
 
   return (
     <form action={formAction} className="space-y-4 rounded-lg border border-black/10 bg-white p-6">
@@ -30,7 +39,7 @@ export function ManufacturingOrderForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <label>
           <span className="mb-1 block text-sm font-medium text-black">Priority</span>
-          <PriorityStarsInput name="priority" defaultValue={order.priority} />
+          <PriorityStarsInput name="priority" defaultValue={priorityDefaultValue} />
           {state.fieldErrors.priority ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.priority}</p>
           ) : null}
@@ -42,7 +51,7 @@ export function ManufacturingOrderForm({
             name="etaDays"
             type="number"
             min={0}
-            defaultValue={defaultEtaDays}
+            defaultValue={valueFor("etaDays", defaultEtaDays.toString())}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.etaDays ? (
@@ -54,7 +63,7 @@ export function ManufacturingOrderForm({
           <span className="mb-1 block text-sm font-medium text-black">Status</span>
           <select
             name="status"
-            defaultValue={order.status}
+            defaultValue={valueFor("status", order.status)}
             className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           >
             {ORDER_STATUSES.map((status) => (
@@ -74,7 +83,7 @@ export function ManufacturingOrderForm({
           </span>
           <textarea
             name="notesFromManu"
-            defaultValue={order.notesFromManu ?? ""}
+            defaultValue={valueFor("notesFromManu", order.notesFromManu ?? "")}
             rows={4}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />

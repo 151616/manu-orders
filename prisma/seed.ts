@@ -13,7 +13,7 @@ const adapter = new PrismaLibSql({
 
 const prisma = new PrismaClient({ adapter });
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const REQUESTER_LABEL = "REQUESTER:Requester Demo";
+const VIEWER_LABEL = "VIEWER:Viewer Demo";
 
 function daysFromNow(days: number) {
   return new Date(Date.now() + days * DAY_IN_MS);
@@ -42,7 +42,7 @@ async function main() {
         etaTargetDate: daysFromNow(3),
         status: OrderStatus.IN_PROGRESS,
         notesFromManu: "Programming complete, machining in progress.",
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
       {
         title: "3D printed cable strain relief",
@@ -58,7 +58,7 @@ async function main() {
         etaDays: 7,
         etaTargetDate: daysFromNow(7),
         status: OrderStatus.QUEUED,
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
       {
         title: "Laser-cut acrylic guard",
@@ -75,7 +75,7 @@ async function main() {
         etaTargetDate: daysFromNow(5),
         status: OrderStatus.WAITING_ON_PARTS,
         notesFromManu: "Waiting for acrylic stock delivery.",
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
       {
         title: "Control panel wiring harness",
@@ -91,7 +91,7 @@ async function main() {
         etaDays: 10,
         etaTargetDate: daysFromNow(10),
         status: OrderStatus.NEW,
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
       {
         title: "Subassembly kitting",
@@ -106,7 +106,7 @@ async function main() {
         etaTargetDate: daysFromNow(14),
         status: OrderStatus.BLOCKED,
         notesFromManu: "Awaiting BOM clarification from engineering.",
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
       {
         title: "Custom spacer washers",
@@ -122,7 +122,7 @@ async function main() {
         etaDays: 6,
         etaTargetDate: daysFromNow(6),
         status: OrderStatus.DONE,
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
     ],
   });
@@ -135,7 +135,7 @@ async function main() {
         defaultOrderUrl: "https://vendor.example/metal-fab",
         defaultCategory: OrderCategory.CNC,
         defaultDescription: "Default bracket profile for fixture updates.",
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
       {
         name: "Prototype Print Job",
@@ -143,7 +143,7 @@ async function main() {
         defaultOrderUrl: "https://vendor.example/print-hub",
         defaultCategory: OrderCategory.PRINT_3D,
         defaultDescription: "Fast turnaround PLA prototype.",
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
       {
         name: "Electrical Harness Order",
@@ -151,9 +151,29 @@ async function main() {
         defaultOrderUrl: "https://vendor.example/electro-build",
         defaultCategory: OrderCategory.ELECTRICAL,
         defaultDescription: "Preferred vendor for control cabinet wiring.",
-        createdByLabel: REQUESTER_LABEL,
+        createdByLabel: VIEWER_LABEL,
       },
     ],
+  });
+
+  const seededOrders = await prisma.order.findMany({
+    select: {
+      id: true,
+      title: true,
+    },
+    orderBy: [{ createdAt: "asc" }],
+  });
+
+  await prisma.orderActivity.createMany({
+    data: seededOrders.map((order) => ({
+      orderId: order.id,
+      role: "VIEWER",
+      action: "ORDER_SEEDED",
+      details: JSON.stringify({
+        summary: `Seeded order: ${order.title}`,
+        diffs: [],
+      }),
+    })),
   });
 }
 

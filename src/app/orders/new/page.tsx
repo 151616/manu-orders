@@ -17,9 +17,10 @@ export default async function NewOrderPage({ searchParams }: NewOrderPageProps) 
   const user = await requireAuth();
   const params = await searchParams;
   const fromBookmarkId = first(params.fromBookmark)?.trim();
+  const canMutate = user.role === "ADMIN";
 
   let bookmark = null;
-  if (fromBookmarkId) {
+  if (fromBookmarkId && canMutate) {
     bookmark = await getBookmarkById(fromBookmarkId);
   }
 
@@ -32,19 +33,25 @@ export default async function NewOrderPage({ searchParams }: NewOrderPageProps) 
         />
       ) : null}
 
-      <NewOrderForm
-        defaults={{
-          title: bookmark?.name ?? "",
-          description: bookmark?.defaultDescription ?? "",
-          requesterName: user.name,
-          requesterContact: "",
-          vendor: bookmark?.defaultVendor ?? "",
-          orderNumber: "",
-          orderUrl: bookmark?.defaultOrderUrl ?? "",
-          quantity: "",
-          category: bookmark?.defaultCategory ?? "OTHER",
-        }}
-      />
+      {canMutate ? (
+        <NewOrderForm
+          defaults={{
+            title: bookmark?.name ?? "",
+            description: bookmark?.defaultDescription ?? "",
+            requesterName: user.name,
+            requesterContact: "",
+            vendor: bookmark?.defaultVendor ?? "",
+            orderNumber: "",
+            orderUrl: bookmark?.defaultOrderUrl ?? "",
+            quantity: "",
+            category: bookmark?.defaultCategory ?? "OTHER",
+          }}
+        />
+      ) : (
+        <div className="rounded-lg border border-black/10 bg-white p-6 text-sm text-black/75">
+          VIEWER access is read-only. Order creation is only available to ADMIN.
+        </div>
+      )}
     </section>
   );
 }

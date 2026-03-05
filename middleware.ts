@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
-const protectedPrefixes = ["/queue", "/orders", "/bookmarks", "/users"];
+const protectedPrefixes = ["/queue", "/orders", "/bookmarks", "/users", "/elevate"];
 
 function isProtectedPath(pathname: string) {
   return protectedPrefixes.some(
@@ -29,6 +29,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/login",
+    "/elevate",
     "/queue/:path*",
     "/orders/:path*",
     "/bookmarks/:path*",

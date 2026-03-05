@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { OrderCategory, OrderStatus } from "@prisma/client";
-import { listOrders, removeOrderFromList } from "@/app/orders/actions";
+import {
+  listDeletedOrders,
+  listOrders,
+  permanentlyDeleteOrder,
+  removeOrderFromList,
+  restoreOrderFromTrash,
+} from "@/app/orders/actions";
 import { QueueRuntime } from "@/app/queue/queue-runtime";
 import { PriorityStarsDisplay } from "@/components/priority-stars-display";
 import { StatusBadge } from "@/components/status-badge";
@@ -46,13 +52,21 @@ function buildQueueHref(params: Record<string, string | undefined>) {
 function toastMessage(code: string | undefined) {
   switch (code) {
     case "order-removed":
-      return "Order removed from the active list.";
+      return "Order moved to trash.";
+    case "order-restored":
+      return "Order restored from trash.";
+    case "order-permanently-deleted":
+      return "Order permanently deleted.";
+    case "elevated":
+      return "Session elevated to ADMIN.";
     case "order-not-found":
       return "Debug: Order no longer exists.";
     case "already-removed":
       return "Debug: Order is already removed from the list.";
     case "forbidden":
       return "Debug: You do not have permission.";
+    case "operation-failed":
+      return "We could not process your request. Please try again.";
     default:
       return null;
   }
@@ -70,7 +84,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   const toastCode = first(params.toast);
   const toastTone = first(params.tone) === "debug" ? "debug" : "success";
   const toast = toastMessage(toastCode);
-  const canRemoveFromList = user.role === "MANUFACTURING" && !isMonitor;
+  const canRemoveFromList = user.role === "ADMIN" && !isMonitor;
 
   const status: OrderStatus | "ALL" =
     ORDER_STATUSES.includes(statusRaw as OrderStatus)
@@ -92,6 +106,8 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
     status,
     category,
   });
+  const deletedOrders =
+    user.role === "ADMIN" && !isMonitor ? await listDeletedOrders() : [];
 
   return (
     <section className={isMonitor ? "space-y-4" : "space-y-6"}>
@@ -108,6 +124,15 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {user.role === "ADMIN" ? (
+            <a
+              href="/orders/export.csv"
+              className="rounded-md border border-black/20 bg-white px-3 py-2 text-sm font-medium text-black hover:bg-black/5"
+            >
+              Export Orders CSV
+            </a>
+          ) : null}
+
           {isMonitor ? (
             <Link
               href={buildQueueHref(baseQuery)}
@@ -302,7 +327,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       type="submit"
                       className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
                     >
-                      Remove from list
+                      Move to Trash
                     </button>
                   </form>
                 ) : null}
@@ -311,6 +336,57 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
           })}
         </div>
       )}
+
+      {user.role === "ADMIN" && !isMonitor ? (
+        <div className="space-y-3 rounded-lg border border-black/10 bg-white p-4">
+          <h2 className="text-lg font-semibold text-black">Trash</h2>
+          {deletedOrders.length === 0 ? (
+            <p className="text-sm text-black/70">No deleted orders.</p>
+          ) : (
+            <ul className="space-y-2">
+              {deletedOrders.map((order) => {
+                const restoreAction = restoreOrderFromTrash.bind(null, order.id);
+                const permanentDeleteAction = permanentlyDeleteOrder.bind(
+                  null,
+                  order.id,
+                );
+
+                return (
+                  <li
+                    key={order.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-black/10 bg-slate-50 px-3 py-2"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-black">{order.title}</p>
+                      <p className="text-xs text-black/60">
+                        Deleted on {order.updatedAt.toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <form action={restoreAction}>
+                        <button
+                          type="submit"
+                          className="rounded-md border border-black/20 bg-white px-3 py-1 text-xs font-medium text-black hover:bg-black/5"
+                        >
+                          Restore
+                        </button>
+                      </form>
+                      <form action={permanentDeleteAction}>
+                        <button
+                          type="submit"
+                          className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                        >
+                          Permanently Delete
+                        </button>
+                      </form>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

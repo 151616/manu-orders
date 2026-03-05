@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth";
 
 export default async function UsersPage() {
   const currentUser = await requireAuth();
-  if (currentUser.role !== "MANUFACTURING") {
+  if (currentUser.role !== "ADMIN") {
     redirect("/queue");
   }
 

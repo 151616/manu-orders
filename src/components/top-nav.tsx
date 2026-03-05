@@ -7,6 +7,8 @@ type TopNavProps = {
 };
 
 export function TopNav({ user }: TopNavProps) {
+  const canMutate = user.role === "ADMIN";
+
   return (
     <header className="border-b border-black/10 bg-white">
       <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
@@ -17,19 +19,29 @@ export function TopNav({ user }: TopNavProps) {
           <Link href="/queue" className="text-sm text-black/80 hover:text-black">
             Queue
           </Link>
-          <Link
-            href="/orders/new"
-            className="text-sm text-black/80 hover:text-black"
-          >
-            New Order
-          </Link>
+          {canMutate ? (
+            <Link
+              href="/orders/new"
+              className="text-sm text-black/80 hover:text-black"
+            >
+              New Order
+            </Link>
+          ) : null}
           <Link
             href="/bookmarks"
             className="text-sm text-black/80 hover:text-black"
           >
             Bookmarks
           </Link>
-          {user.role === "MANUFACTURING" ? (
+          {!canMutate ? (
+            <Link
+              href="/elevate"
+              className="text-sm text-black/80 hover:text-black"
+            >
+              Elevate
+            </Link>
+          ) : null}
+          {canMutate ? (
             <Link
               href="/users"
               className="text-sm text-black/80 hover:text-black"

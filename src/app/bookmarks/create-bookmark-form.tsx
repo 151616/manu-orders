@@ -12,6 +12,8 @@ import {
 
 export function CreateBookmarkForm() {
   const [state, formAction] = useActionState(createBookmark, EMPTY_FORM_STATE);
+  const valueFor = (field: string, fallback: string = "") =>
+    state.submittedValues[field] ?? fallback;
 
   return (
     <form action={formAction} className="space-y-4 rounded-lg border border-black/10 bg-white p-6">
@@ -24,6 +26,7 @@ export function CreateBookmarkForm() {
           <span className="mb-1 block text-sm font-medium text-black">Name</span>
           <input
             name="name"
+            defaultValue={valueFor("name")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.name ? (
@@ -37,6 +40,7 @@ export function CreateBookmarkForm() {
           </span>
           <input
             name="defaultVendor"
+            defaultValue={valueFor("defaultVendor")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.defaultVendor ? (
@@ -52,7 +56,7 @@ export function CreateBookmarkForm() {
           </span>
           <select
             name="defaultCategory"
-            defaultValue=""
+            defaultValue={valueFor("defaultCategory")}
             className="w-full rounded-md border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           >
             <option value="">None</option>
@@ -75,6 +79,7 @@ export function CreateBookmarkForm() {
           </span>
           <input
             name="defaultOrderUrl"
+            defaultValue={valueFor("defaultOrderUrl")}
             placeholder="https://"
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
@@ -92,6 +97,7 @@ export function CreateBookmarkForm() {
           <textarea
             name="defaultDescription"
             rows={3}
+            defaultValue={valueFor("defaultDescription")}
             className="w-full rounded-md border border-black/20 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-black/50 focus:ring-2 focus:ring-black/20"
           />
           {state.fieldErrors.defaultDescription ? (

@@ -3,16 +3,19 @@
 import { OrderCategory, OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAuth, requireManufacturing } from "@/lib/auth";
+import { requireAdmin, requireAuth } from "@/lib/auth";
 import {
+  collectSubmittedValues,
   FormActionState,
   getNullableTrimmedString,
   getOptionalInt,
   getTrimmedString,
   toFieldErrors,
 } from "@/lib/form-utils";
+import { handleServerMutationError } from "@/lib/action-errors";
 import { ORDER_STATUS_SORT_ORDER, ORDER_STATUSES } from "@/lib/order-domain";
 import {
+  ActionIdSchema,
   OrderCreateSchema,
   OrderManufacturingUpdateSchema,
   OrderRequesterUpdateSchema,
@@ -40,8 +43,8 @@ type ActivityDetails = {
 type OrderActivityFeedItem = {
   id: string;
   action: string;
-  createdAt: Date;
-  userName: string;
+  at: Date;
+  role: string;
   details: ActivityDetails;
 };
 
@@ -58,8 +61,40 @@ const FIELD_LABELS: Record<string, string> = {
   priority: "Priority",
   etaDays: "ETA Days",
   status: "Status",
+  isDeleted: "Deleted",
   notesFromManu: "Manufacturing Notes",
 };
+
+const ORDER_CREATE_ALLOWED_FIELDS = [
+  "title",
+  "description",
+  "vendor",
+  "orderNumber",
+  "orderUrl",
+  "quantity",
+  "category",
+  "requesterName",
+  "requesterContact",
+] as const;
+
+const ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS = [
+  "title",
+  "description",
+  "vendor",
+  "orderNumber",
+  "orderUrl",
+  "quantity",
+  "category",
+  "requesterName",
+  "requesterContact",
+] as const;
+
+const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
+  "priority",
+  "etaDays",
+  "status",
+  "notesFromManu",
+] as const;
 
 function parseRequesterFields(formData: FormData) {
   return OrderRequesterUpdateSchema.safeParse({
@@ -84,12 +119,27 @@ function parseManufacturingFields(formData: FormData) {
   });
 }
 
-async function requireManufacturingUserOrNull() {
-  try {
-    return await requireManufacturing();
-  } catch {
-    return null;
+function hasUnexpectedFormKeys(
+  formData: FormData,
+  allowedFields: readonly string[],
+) {
+  const allowed = new Set(allowedFields);
+
+  for (const key of formData.keys()) {
+    if (key.startsWith("$ACTION_")) {
+      continue;
+    }
+    if (!allowed.has(key)) {
+      return true;
+    }
   }
+
+  return false;
+}
+
+function parseActionId(id: string) {
+  const parsed = ActionIdSchema.safeParse(id);
+  return parsed.success ? parsed.data : null;
 }
 
 function formatValue(value: unknown): string {
@@ -137,13 +187,13 @@ function summarizeDiffs(
 
 async function createOrderActivity({
   orderId,
-  actorLabel,
+  role,
   action,
   summary,
   diffs,
 }: {
-  orderId: string;
-  actorLabel: string;
+  orderId?: string | null;
+  role: string;
   action: string;
   summary: string;
   diffs: ActivityDiff[];
@@ -156,7 +206,7 @@ async function createOrderActivity({
   await prisma.orderActivity.create({
     data: {
       orderId,
-      actorLabel,
+      role,
       action,
       details: JSON.stringify(details),
     },
@@ -216,6 +266,7 @@ export async function listOrders({
 
   const orders = await prisma.order.findMany({
     where: {
+      isDeleted: false,
       ...(trimmedSearch
         ? {
             OR: [
@@ -246,15 +297,25 @@ export async function listOrders({
   });
 }
 
+export async function listDeletedOrders() {
+  await requireAdmin();
+
+  return prisma.order.findMany({
+    where: { isDeleted: true },
+    orderBy: [{ updatedAt: "desc" }],
+  });
+}
+
 export async function getOrderById(orderId: string) {
   await requireAuth();
 
-  if (!orderId) {
+  const parsedOrderId = parseActionId(orderId);
+  if (!parsedOrderId) {
     return null;
   }
 
-  return prisma.order.findUnique({
-    where: { id: orderId },
+  return prisma.order.findFirst({
+    where: { id: parsedOrderId, isDeleted: false },
   });
 }
 
@@ -263,20 +324,21 @@ export async function listOrderActivities(
 ): Promise<OrderActivityFeedItem[]> {
   await requireAuth();
 
-  if (!orderId) {
+  const parsedOrderId = parseActionId(orderId);
+  if (!parsedOrderId) {
     return [];
   }
 
   const activities = await prisma.orderActivity.findMany({
-    where: { orderId },
-    orderBy: [{ createdAt: "desc" }],
+    where: { orderId: parsedOrderId },
+    orderBy: [{ at: "desc" }],
   });
 
   return activities.map((activity) => ({
     id: activity.id,
     action: activity.action,
-    createdAt: activity.createdAt,
-    userName: activity.actorLabel,
+    at: activity.at,
+    role: activity.role,
     details: parseActivityDetails(activity.details),
   }));
 }
@@ -285,8 +347,18 @@ export async function createOrder(
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  const user = await requireAuth();
+  const user = await requireAdmin();
   const initialEtaDays = 10;
+  const submittedValues = collectSubmittedValues(formData, ORDER_CREATE_ALLOWED_FIELDS);
+
+  if (hasUnexpectedFormKeys(formData, ORDER_CREATE_ALLOWED_FIELDS)) {
+    return {
+      success: null,
+      error: "Unexpected fields in request.",
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
 
   const parsed = OrderCreateSchema.safeParse({
     title: getTrimmedString(formData.get("title")),
@@ -305,65 +377,89 @@ export async function createOrder(
       success: null,
       error: "Please fix the highlighted fields.",
       fieldErrors: toFieldErrors(parsed.error),
+      submittedValues,
     };
   }
 
-  const created = await prisma.order.create({
-    data: {
-      ...parsed.data,
-      priority: 3,
-      etaDays: initialEtaDays,
-      etaTargetDate: addDays(new Date(), initialEtaDays),
-      status: "NEW",
-      createdByLabel: user.label,
-    },
-  });
+  let createdOrderId: string | null = null;
 
-  const createDiffs = buildDiffs(
-    {
-      title: null,
-      description: null,
-      vendor: null,
-      orderNumber: null,
-      orderUrl: null,
-      quantity: null,
-      category: null,
-      requesterName: null,
-      requesterContact: null,
-      priority: null,
-      etaDays: null,
-      status: null,
-      notesFromManu: null,
-    },
-    {
-      title: created.title,
-      description: created.description,
-      vendor: created.vendor,
-      orderNumber: created.orderNumber,
-      orderUrl: created.orderUrl,
-      quantity: created.quantity,
-      category: created.category,
-      requesterName: created.requesterName,
-      requesterContact: created.requesterContact,
-      priority: created.priority,
-      etaDays: created.etaDays,
-      status: created.status,
-      notesFromManu: created.notesFromManu,
-    },
-  );
+  try {
+    const created = await prisma.order.create({
+      data: {
+        ...parsed.data,
+        priority: 3,
+        etaDays: initialEtaDays,
+        etaTargetDate: addDays(new Date(), initialEtaDays),
+        status: "NEW",
+        createdByLabel: user.label,
+      },
+    });
 
-  await createOrderActivity({
-    orderId: created.id,
-    actorLabel: user.label,
-    action: "ORDER_CREATED",
-    summary: "Order created.",
-    diffs: createDiffs,
-  });
+    const createDiffs = buildDiffs(
+      {
+        title: null,
+        description: null,
+        vendor: null,
+        orderNumber: null,
+        orderUrl: null,
+        quantity: null,
+        category: null,
+        requesterName: null,
+        requesterContact: null,
+        priority: null,
+        etaDays: null,
+        status: null,
+        isDeleted: null,
+        notesFromManu: null,
+      },
+      {
+        title: created.title,
+        description: created.description,
+        vendor: created.vendor,
+        orderNumber: created.orderNumber,
+        orderUrl: created.orderUrl,
+        quantity: created.quantity,
+        category: created.category,
+        requesterName: created.requesterName,
+        requesterContact: created.requesterContact,
+        priority: created.priority,
+        etaDays: created.etaDays,
+        status: created.status,
+        isDeleted: created.isDeleted,
+        notesFromManu: created.notesFromManu,
+      },
+    );
+
+    await createOrderActivity({
+      orderId: created.id,
+      role: user.role,
+      action: "ORDER_CREATED",
+      summary: "Order created.",
+      diffs: createDiffs,
+    });
+
+    createdOrderId = created.id;
+  } catch (error) {
+    return {
+      success: null,
+      error: handleServerMutationError("createOrder", error),
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
 
   revalidatePath("/queue");
   revalidatePath("/orders/new");
-  revalidatePath(`/orders/${created.id}`);
-  redirect(`/orders/${created.id}?saved=created`);
+  if (!createdOrderId) {
+    return {
+      success: null,
+      error: "Unable to determine the new order identifier.",
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
+  revalidatePath(`/orders/${createdOrderId}`);
+  redirect(`/orders/${createdOrderId}?saved=created`);
 }
 
 export async function updateOrderRequesterFields(
@@ -371,14 +467,28 @@ export async function updateOrderRequesterFields(
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  const user = await requireAuth();
+  const user = await requireAdmin();
+  const submittedValues = collectSubmittedValues(
+    formData,
+    ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS,
+  );
+  const parsedOrderId = parseActionId(orderId);
 
-  const existing = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!existing) {
+  if (!parsedOrderId) {
     return {
       success: null,
-      error: "Order not found.",
+      error: "Invalid order request.",
       fieldErrors: {},
+      submittedValues,
+    };
+  }
+
+  if (hasUnexpectedFormKeys(formData, ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS)) {
+    return {
+      success: null,
+      error: "Unexpected fields in request.",
+      fieldErrors: {},
+      submittedValues,
     };
   }
 
@@ -388,27 +498,52 @@ export async function updateOrderRequesterFields(
       success: null,
       error: "Please fix the highlighted fields.",
       fieldErrors: toFieldErrors(parsed.error),
+      submittedValues,
     };
   }
 
-  const diffs = buildDiffs(existing as unknown as Record<string, unknown>, parsed.data);
+  try {
+    const existing = await prisma.order.findFirst({
+      where: { id: parsedOrderId, isDeleted: false },
+    });
+    if (!existing) {
+      return {
+        success: null,
+        error: "Order not found.",
+        fieldErrors: {},
+        submittedValues,
+      };
+    }
 
-  await prisma.order.update({
-    where: { id: orderId },
-    data: parsed.data,
-  });
+    const diffs = buildDiffs(
+      existing as unknown as Record<string, unknown>,
+      parsed.data,
+    );
 
-  await createOrderActivity({
-    orderId,
-    actorLabel: user.label,
-    action: "ORDER_REQUESTER_UPDATED",
-    summary: summarizeDiffs(diffs, "Requester fields saved without value changes."),
-    diffs,
-  });
+    await prisma.order.update({
+      where: { id: parsedOrderId },
+      data: parsed.data,
+    });
+
+    await createOrderActivity({
+      orderId: parsedOrderId,
+      role: user.role,
+      action: "ORDER_REQUESTER_UPDATED",
+      summary: summarizeDiffs(diffs, "Requester fields saved without value changes."),
+      diffs,
+    });
+  } catch (error) {
+    return {
+      success: null,
+      error: handleServerMutationError("updateOrderRequesterFields", error),
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
 
   revalidatePath("/queue");
-  revalidatePath(`/orders/${orderId}`);
-  redirect(`/orders/${orderId}?saved=requester`);
+  revalidatePath(`/orders/${parsedOrderId}`);
+  redirect(`/orders/${parsedOrderId}?saved=requester`);
 }
 
 export async function updateOrderManufacturingFields(
@@ -416,14 +551,30 @@ export async function updateOrderManufacturingFields(
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  const user = await requireManufacturing();
+  const user = await requireAdmin();
+  const submittedValues = collectSubmittedValues(
+    formData,
+    ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS,
+  );
+  const parsedOrderId = parseActionId(orderId);
 
-  const existing = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!existing) {
+  if (!parsedOrderId) {
     return {
       success: null,
-      error: "Order not found.",
+      error: "Invalid order request.",
       fieldErrors: {},
+      submittedValues,
+    };
+  }
+
+  if (
+    hasUnexpectedFormKeys(formData, ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS)
+  ) {
+    return {
+      success: null,
+      error: "Unexpected fields in request.",
+      fieldErrors: {},
+      submittedValues,
     };
   }
 
@@ -433,76 +584,203 @@ export async function updateOrderManufacturingFields(
       success: null,
       error: "Please fix the highlighted fields.",
       fieldErrors: toFieldErrors(parsed.error),
+      submittedValues,
     };
   }
 
-  const diffs = buildDiffs(existing as unknown as Record<string, unknown>, parsed.data);
+  try {
+    const existing = await prisma.order.findFirst({
+      where: { id: parsedOrderId, isDeleted: false },
+    });
+    if (!existing) {
+      return {
+        success: null,
+        error: "Order not found.",
+        fieldErrors: {},
+        submittedValues,
+      };
+    }
 
-  await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      ...parsed.data,
-      etaTargetDate: addDays(new Date(), parsed.data.etaDays),
-    },
-  });
+    const diffs = buildDiffs(
+      existing as unknown as Record<string, unknown>,
+      parsed.data,
+    );
 
-  await createOrderActivity({
-    orderId,
-    actorLabel: user.label,
-    action: "ORDER_MANUFACTURING_UPDATED",
-    summary: summarizeDiffs(
+    await prisma.order.update({
+      where: { id: parsedOrderId },
+      data: {
+        ...parsed.data,
+        etaTargetDate: addDays(new Date(), parsed.data.etaDays),
+      },
+    });
+
+    await createOrderActivity({
+      orderId: parsedOrderId,
+      role: user.role,
+      action: "ORDER_MANUFACTURING_UPDATED",
+      summary: summarizeDiffs(
+        diffs,
+        "Manufacturing fields saved without value changes.",
+      ),
       diffs,
-      "Manufacturing fields saved without value changes.",
-    ),
-    diffs,
-  });
+    });
+  } catch (error) {
+    return {
+      success: null,
+      error: handleServerMutationError("updateOrderManufacturingFields", error),
+      fieldErrors: {},
+      submittedValues,
+    };
+  }
 
   revalidatePath("/queue");
-  revalidatePath(`/orders/${orderId}`);
-  redirect(`/orders/${orderId}?saved=manufacturing`);
+  revalidatePath(`/orders/${parsedOrderId}`);
+  redirect(`/orders/${parsedOrderId}?saved=manufacturing`);
 }
 
 export async function removeOrderFromList(orderId: string) {
-  const actor = await requireManufacturingUserOrNull();
-  if (!actor) {
-    redirect("/queue?toast=forbidden&tone=debug");
-  }
-
-  const existing = await prisma.order.findUnique({
-    where: { id: orderId },
-  });
-
-  if (!existing) {
+  const parsedOrderId = parseActionId(orderId);
+  if (!parsedOrderId) {
     redirect("/queue?toast=order-not-found&tone=debug");
   }
 
-  if (existing.status === "CANCELLED") {
-    redirect("/queue?toast=already-removed&tone=debug");
+  const actor = await requireAdmin();
+  let redirectTarget = "/queue?toast=order-removed&tone=success";
+
+  try {
+    const existing = await prisma.order.findUnique({
+      where: { id: parsedOrderId },
+    });
+
+    if (!existing) {
+      redirectTarget = "/queue?toast=order-not-found&tone=debug";
+    } else if (existing.isDeleted) {
+      redirectTarget = "/queue?toast=already-removed&tone=debug";
+    } else {
+      const nextStatus = "CANCELLED";
+      const diffs = buildDiffs(
+        { status: existing.status, isDeleted: existing.isDeleted },
+        { status: nextStatus, isDeleted: true },
+      );
+
+      await prisma.order.update({
+        where: { id: parsedOrderId },
+        data: {
+          status: nextStatus,
+          isDeleted: true,
+        },
+      });
+
+      await createOrderActivity({
+        orderId: parsedOrderId,
+        role: actor.role,
+        action: "ORDER_SOFT_DELETED",
+        summary: summarizeDiffs(
+          diffs,
+          "Order moved to trash.",
+        ),
+        diffs,
+      });
+    }
+  } catch (error) {
+    handleServerMutationError("removeOrderFromList", error);
+    redirectTarget = "/queue?toast=operation-failed&tone=debug";
   }
 
-  const nextStatus = "CANCELLED";
-  const diffs = buildDiffs(
-    { status: existing.status },
-    { status: nextStatus },
-  );
+  revalidatePath("/queue");
+  revalidatePath(`/orders/${parsedOrderId}`);
+  redirect(redirectTarget);
+}
 
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { status: nextStatus },
-  });
+export async function restoreOrderFromTrash(orderId: string) {
+  const parsedOrderId = parseActionId(orderId);
+  if (!parsedOrderId) {
+    redirect("/queue?toast=order-not-found&tone=debug");
+  }
 
-  await createOrderActivity({
-    orderId,
-    actorLabel: actor.label,
-    action: "ORDER_REMOVED_FROM_LIST",
-    summary: summarizeDiffs(
-      diffs,
-      "Order removed from active list.",
-    ),
-    diffs,
-  });
+  const actor = await requireAdmin();
+  let redirectTarget = "/queue?toast=order-restored&tone=success";
+
+  try {
+    const existing = await prisma.order.findUnique({
+      where: { id: parsedOrderId },
+    });
+
+    if (!existing || !existing.isDeleted) {
+      redirectTarget = "/queue?toast=order-not-found&tone=debug";
+    } else {
+      const nextStatus = existing.status === "CANCELLED" ? "NEW" : existing.status;
+      const diffs = buildDiffs(
+        { status: existing.status, isDeleted: existing.isDeleted },
+        { status: nextStatus, isDeleted: false },
+      );
+
+      await prisma.order.update({
+        where: { id: parsedOrderId },
+        data: {
+          isDeleted: false,
+          status: nextStatus,
+        },
+      });
+
+      await createOrderActivity({
+        orderId: parsedOrderId,
+        role: actor.role,
+        action: "ORDER_RESTORED",
+        summary: summarizeDiffs(diffs, "Order restored from trash."),
+        diffs,
+      });
+    }
+  } catch (error) {
+    handleServerMutationError("restoreOrderFromTrash", error);
+    redirectTarget = "/queue?toast=operation-failed&tone=debug";
+  }
 
   revalidatePath("/queue");
-  revalidatePath(`/orders/${orderId}`);
-  redirect("/queue?toast=order-removed&tone=success");
+  revalidatePath(`/orders/${parsedOrderId}`);
+  redirect(redirectTarget);
+}
+
+export async function permanentlyDeleteOrder(orderId: string) {
+  const parsedOrderId = parseActionId(orderId);
+  if (!parsedOrderId) {
+    redirect("/queue?toast=order-not-found&tone=debug");
+  }
+
+  const actor = await requireAdmin();
+  let redirectTarget = "/queue?toast=order-permanently-deleted&tone=success";
+
+  try {
+    const existing = await prisma.order.findUnique({
+      where: { id: parsedOrderId },
+    });
+
+    if (!existing || !existing.isDeleted) {
+      redirectTarget = "/queue?toast=order-not-found&tone=debug";
+    } else {
+      await createOrderActivity({
+        orderId: null,
+        role: actor.role,
+        action: "ORDER_PERMANENTLY_DELETED",
+        summary: "Order permanently deleted.",
+        diffs: [
+          {
+            field: "orderId",
+            from: parsedOrderId,
+            to: "deleted",
+          },
+        ],
+      });
+
+      await prisma.order.delete({
+        where: { id: parsedOrderId },
+      });
+    }
+  } catch (error) {
+    handleServerMutationError("permanentlyDeleteOrder", error);
+    redirectTarget = "/queue?toast=operation-failed&tone=debug";
+  }
+
+  revalidatePath("/queue");
+  redirect(redirectTarget);
 }

@@ -31,7 +31,14 @@ SELECT
     b."defaultOrderUrl",
     b."defaultCategory",
     b."defaultDescription",
-    COALESCE(u."role" || ':' || u."name", 'REQUESTER:Requester Demo'),
+    COALESCE(
+      CASE
+        WHEN u."role" = 'REQUESTER' THEN 'VIEWER:' || u."name"
+        WHEN u."role" = 'MANUFACTURING' THEN 'ADMIN:' || u."name"
+        ELSE u."role" || ':' || u."name"
+      END,
+      'VIEWER:Viewer Demo'
+    ),
     b."createdAt",
     b."updatedAt"
 FROM "Bookmark" AS b
@@ -60,7 +67,14 @@ INSERT INTO "new_OrderActivity" (
 SELECT
     oa."id",
     oa."orderId",
-    COALESCE(u."role" || ':' || u."name", 'UNKNOWN:Unknown Actor'),
+    COALESCE(
+      CASE
+        WHEN u."role" = 'REQUESTER' THEN 'VIEWER:' || u."name"
+        WHEN u."role" = 'MANUFACTURING' THEN 'ADMIN:' || u."name"
+        ELSE u."role" || ':' || u."name"
+      END,
+      'UNKNOWN:Unknown Actor'
+    ),
     oa."createdAt",
     oa."action",
     oa."details"
@@ -131,7 +145,14 @@ SELECT
     o."notesFromManu",
     CASE
         WHEN o."createdByUserId" IS NULL THEN NULL
-        ELSE COALESCE(u."role" || ':' || u."name", 'UNKNOWN:Unknown Creator')
+        ELSE COALESCE(
+          CASE
+            WHEN u."role" = 'REQUESTER' THEN 'VIEWER:' || u."name"
+            WHEN u."role" = 'MANUFACTURING' THEN 'ADMIN:' || u."name"
+            ELSE u."role" || ':' || u."name"
+          END,
+          'UNKNOWN:Unknown Creator'
+        )
     END
 FROM "Order" AS o
 LEFT JOIN "User" AS u ON u."id" = o."createdByUserId";
