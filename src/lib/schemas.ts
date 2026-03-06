@@ -1,5 +1,12 @@
-import { OrderCategory, OrderStatus } from "@prisma/client";
 import { z } from "zod";
+import {
+  BOOKMARK_KINDS,
+  type BookmarkKind,
+} from "@/lib/bookmark-domain";
+import {
+  ORDER_CATEGORIES,
+  ORDER_STATUSES,
+} from "@/lib/order-domain";
 
 const optionalText = (max: number) => z.string().max(max).nullable();
 
@@ -47,27 +54,56 @@ const requesterFieldsSchema = z.object({
   orderNumber: optionalText(120),
   orderUrl: nullableUrl("Order URL"),
   quantity: z.number().int("Quantity must be a whole number.").min(1).nullable(),
-  category: z.nativeEnum(OrderCategory),
+  category: z.enum(ORDER_CATEGORIES),
   requesterName: z.string().min(1, "Requester name is required.").max(200),
-  requesterContact: optionalText(200),
 });
 
-export const OrderCreateSchema = requesterFieldsSchema;
+export const OrderCreateSchema = requesterFieldsSchema.extend({
+  priority: z.number().int().min(1).max(5),
+  etaDays: z.number().int().min(0).max(365),
+});
 export const OrderRequesterUpdateSchema = requesterFieldsSchema;
 
 export const OrderManufacturingUpdateSchema = z.object({
   priority: z.number().int().min(1).max(5),
   etaDays: z.number().int().min(0).max(365),
-  status: z.nativeEnum(OrderStatus),
+  status: z.enum(ORDER_STATUSES),
   notesFromManu: optionalText(2000),
 });
 
-export const BookmarkCreateUpdateSchema = z.object({
+const bookmarkTemplateFieldsSchema = z.object({
   name: z.string().min(1, "Bookmark name is required.").max(120),
   defaultVendor: optionalText(200),
   defaultOrderUrl: nullableUrl("Default order URL"),
-  defaultCategory: z.nativeEnum(OrderCategory).nullable(),
+  defaultCategory: z.enum(ORDER_CATEGORIES).nullable(),
   defaultDescription: optionalText(2000),
 });
+
+const bookmarkSiteFieldsSchema = z.object({
+  name: z.string().min(1, "Website name is required.").max(120),
+  siteUrl: nullableUrl("Website URL").refine((value) => value !== null, {
+    message: "Website URL is required.",
+  }),
+  siteVendorHint: optionalText(200),
+});
+
+export const BookmarkKindSchema = z.enum(BOOKMARK_KINDS);
+
+export const BookmarkTemplateCreateUpdateSchema = bookmarkTemplateFieldsSchema;
+
+export const BookmarkSiteCreateUpdateSchema = bookmarkSiteFieldsSchema;
+
+export const BookmarkCreateUpdateSchema = z.discriminatedUnion("kind", [
+  bookmarkTemplateFieldsSchema.extend({
+    kind: z.literal("TEMPLATE"),
+  }),
+  bookmarkSiteFieldsSchema.extend({
+    kind: z.literal("SITE"),
+  }),
+]);
+
+export function isBookmarkKind(value: string): value is BookmarkKind {
+  return BOOKMARK_KINDS.includes(value as BookmarkKind);
+}
 
 export const ActionIdSchema = z.uuid("Invalid identifier.");

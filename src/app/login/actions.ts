@@ -60,11 +60,17 @@ function secureCodeMatch(input: string, expected: string) {
 }
 
 function getExpectedRoleCode(role: UserRoleValue) {
-  if (role === "ADMIN") {
-    return process.env.TEAM_ADMIN_CODE ?? process.env.TEAM_MANU_CODE;
+  const rawCode =
+    role === "ADMIN"
+      ? process.env.TEAM_ADMIN_CODE ?? process.env.TEAM_MANU_CODE
+      : process.env.TEAM_ACCESS_CODE;
+
+  if (!rawCode) {
+    return null;
   }
 
-  return process.env.TEAM_ACCESS_CODE;
+  const normalized = rawCode.trim();
+  return normalized.length > 0 ? normalized : null;
 }
 
 export async function loginAction(

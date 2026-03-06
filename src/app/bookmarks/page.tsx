@@ -1,10 +1,8 @@
 import { BookmarkCard } from "@/app/bookmarks/bookmark-card";
 import { CreateBookmarkForm } from "@/app/bookmarks/create-bookmark-form";
 import {
-  listBookmarksForCurrentUser,
-  listDeletedBookmarksForCurrentUser,
-  permanentlyDeleteBookmark,
-  restoreBookmark,
+  listSiteBookmarksForCurrentUser,
+  listTemplateBookmarksForCurrentUser,
 } from "@/app/bookmarks/actions";
 import { FormMessage } from "@/components/form-message";
 import { requireAuth } from "@/lib/auth";
@@ -42,10 +40,8 @@ function pageMessage(saved: string | undefined) {
 export default async function BookmarksPage({ searchParams }: BookmarksPageProps) {
   const user = await requireAuth();
   const canMutate = user.role === "ADMIN";
-  const bookmarks = await listBookmarksForCurrentUser();
-  const deletedBookmarks = canMutate
-    ? await listDeletedBookmarksForCurrentUser()
-    : [];
+  const siteBookmarks = await listSiteBookmarksForCurrentUser();
+  const templateBookmarks = await listTemplateBookmarksForCurrentUser();
   const saved = first((await searchParams).saved);
   const message = pageMessage(saved);
 
@@ -64,72 +60,27 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
 
       {canMutate ? <CreateBookmarkForm /> : null}
 
-      <div className="space-y-3">
-        {bookmarks.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm">
-            No bookmarks yet.
-          </p>
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
+        <h2 className="text-lg font-semibold text-black">Websites</h2>
+        {siteBookmarks.length === 0 ? (
+          <p className="text-sm text-black/70">No website bookmarks yet.</p>
         ) : (
-          bookmarks.map((bookmark) => (
-            <BookmarkCard
-              key={bookmark.id}
-              bookmark={bookmark}
-              canMutate={canMutate}
-            />
+          siteBookmarks.map((bookmark) => (
+            <BookmarkCard key={bookmark.id} bookmark={bookmark} canMutate={canMutate} />
           ))
         )}
       </div>
 
-      {canMutate ? (
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
-          <h2 className="text-lg font-semibold text-black">Trash</h2>
-          {deletedBookmarks.length === 0 ? (
-            <p className="text-sm text-black/70">No deleted bookmarks.</p>
-          ) : (
-            <ul className="space-y-2">
-              {deletedBookmarks.map((bookmark) => {
-                const restoreAction = restoreBookmark.bind(null, bookmark.id);
-                const permanentDeleteAction = permanentlyDeleteBookmark.bind(
-                  null,
-                  bookmark.id,
-                );
-
-                return (
-                  <li
-                    key={bookmark.id}
-                    className="flex flex-col items-start gap-2 rounded-md border border-black/10 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-black">{bookmark.name}</p>
-                      <p className="text-xs text-black/60">
-                        Deleted on {bookmark.updatedAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                      <form action={restoreAction}>
-                        <button
-                          type="submit"
-                          className="w-full rounded-lg border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
-                        >
-                          Restore
-                        </button>
-                      </form>
-                      <form action={permanentDeleteAction}>
-                        <button
-                          type="submit"
-                          className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto"
-                        >
-                          Permanently Delete
-                        </button>
-                      </form>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      ) : null}
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
+        <h2 className="text-lg font-semibold text-black">Templates</h2>
+        {templateBookmarks.length === 0 ? (
+          <p className="text-sm text-black/70">No template bookmarks yet.</p>
+        ) : (
+          templateBookmarks.map((bookmark) => (
+            <BookmarkCard key={bookmark.id} bookmark={bookmark} canMutate={canMutate} />
+          ))
+        )}
+      </div>
     </section>
   );
 }

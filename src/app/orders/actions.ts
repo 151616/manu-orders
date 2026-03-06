@@ -1,6 +1,5 @@
 "use server";
 
-import { OrderCategory, OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireAuth } from "@/lib/auth";
@@ -13,7 +12,18 @@ import {
   toFieldErrors,
 } from "@/lib/form-utils";
 import { handleServerMutationError } from "@/lib/action-errors";
-import { ORDER_STATUS_SORT_ORDER, ORDER_STATUSES } from "@/lib/order-domain";
+import {
+  ORDER_CATEGORIES,
+  ORDER_STATUS_SORT_ORDER,
+  ORDER_STATUSES,
+  type OrderCategory,
+  type OrderStatus,
+} from "@/lib/order-domain";
+import type {
+  OrderCategory as PrismaOrderCategory,
+  OrderStatus as PrismaOrderStatus,
+  Prisma,
+} from "@prisma/client";
 import {
   ActionIdSchema,
   OrderCreateSchema,
@@ -75,7 +85,6 @@ const FIELD_LABELS: Record<string, string> = {
   quantity: "Quantity",
   category: "Category",
   requesterName: "Requester Name",
-  requesterContact: "Requester Contact",
   priority: "Priority",
   etaDays: "ETA Days",
   status: "Status",
@@ -92,7 +101,8 @@ const ORDER_CREATE_ALLOWED_FIELDS = [
   "quantity",
   "category",
   "requesterName",
-  "requesterContact",
+  "priority",
+  "etaDays",
 ] as const;
 
 const ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS = [
@@ -104,7 +114,6 @@ const ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS = [
   "quantity",
   "category",
   "requesterName",
-  "requesterContact",
 ] as const;
 
 const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
@@ -116,6 +125,28 @@ const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
 
 const ORDER_ATTACHMENT_ALLOWED_FIELDS = ["attachment"] as const;
 const ORDER_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+const LIST_ORDERS_TIMEOUT_MS = 5000;
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutErrorMessage: string,
+): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(timeoutErrorMessage));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
 
 function parseRequesterFields(formData: FormData) {
   return OrderRequesterUpdateSchema.safeParse({
@@ -127,7 +158,6 @@ function parseRequesterFields(formData: FormData) {
     quantity: getOptionalInt(formData.get("quantity")),
     category: getTrimmedString(formData.get("category")),
     requesterName: getTrimmedString(formData.get("requesterName")),
-    requesterContact: getNullableTrimmedString(formData.get("requesterContact")),
   });
 }
 
@@ -282,38 +312,54 @@ export async function listOrders({
   const categoryFilter =
     category &&
     category !== "ALL" &&
-    Object.values(OrderCategory).includes(category)
+    ORDER_CATEGORIES.includes(category as OrderCategory)
       ? category
       : undefined;
-  const statusWhere = statusFilter
-    ? { status: statusFilter }
-    : { status: { not: OrderStatus.CANCELLED } };
+  const whereClause: Prisma.OrderWhereInput = {
+    isDeleted: false,
+    ...(trimmedSearch
+      ? {
+          OR: [
+            { title: { contains: trimmedSearch } },
+            { orderNumber: { contains: trimmedSearch } },
+            { requesterName: { contains: trimmedSearch } },
+          ],
+        }
+      : {}),
+    ...(statusFilter
+      ? { status: statusFilter as PrismaOrderStatus }
+      : { status: { not: "CANCELLED" as PrismaOrderStatus } }),
+    ...(categoryFilter
+      ? { category: categoryFilter as PrismaOrderCategory }
+      : {}),
+  };
 
-  const orders = await prisma.order.findMany({
-    where: {
-      isDeleted: false,
-      ...(trimmedSearch
-        ? {
-            OR: [
-              { title: { contains: trimmedSearch } },
-              { orderNumber: { contains: trimmedSearch } },
-              { requesterName: { contains: trimmedSearch } },
-            ],
-          }
-        : {}),
-      ...statusWhere,
-      ...(categoryFilter ? { category: categoryFilter } : {}),
-    },
-    orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
-  });
+  let orders:
+    | Awaited<ReturnType<typeof prisma.order.findMany>>
+    | [] = [];
+  try {
+    orders = await withTimeout(
+      prisma.order.findMany({
+        where: whereClause,
+        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+      }),
+      LIST_ORDERS_TIMEOUT_MS,
+      "listOrders query timed out.",
+    );
+  } catch (error) {
+    console.error("[listOrders] failed, returning empty result.", error);
+    return [];
+  }
+
+  const statusSortValue = (statusValue: string) =>
+    ORDER_STATUS_SORT_ORDER[statusValue as OrderStatus] ?? Number.MAX_SAFE_INTEGER;
 
   return orders.sort((a, b) => {
     if (a.priority !== b.priority) {
       return b.priority - a.priority;
     }
 
-    const statusDelta =
-      ORDER_STATUS_SORT_ORDER[a.status] - ORDER_STATUS_SORT_ORDER[b.status];
+    const statusDelta = statusSortValue(a.status) - statusSortValue(b.status);
     if (statusDelta !== 0) {
       return statusDelta;
     }
@@ -323,12 +369,25 @@ export async function listOrders({
 }
 
 export async function listDeletedOrders() {
-  await requireAdmin();
+  const user = await requireAdmin();
 
-  return prisma.order.findMany({
-    where: { isDeleted: true },
-    orderBy: [{ updatedAt: "desc" }],
-  });
+  try {
+    return await withTimeout(
+      prisma.order.findMany({
+        where: { isDeleted: true },
+        orderBy: [{ updatedAt: "desc" }],
+      }),
+      LIST_ORDERS_TIMEOUT_MS,
+      "listDeletedOrders query timed out.",
+    );
+  } catch (error) {
+    console.error("[trash] listDeletedOrders failed.", {
+      role: user.role,
+      label: user.label,
+      error,
+    });
+    return [];
+  }
 }
 
 export async function getOrderById(orderId: string) {
@@ -573,7 +632,6 @@ export async function createOrder(
   formData: FormData,
 ): Promise<FormActionState> {
   const user = await requireAdmin();
-  const initialEtaDays = 10;
   const submittedValues = collectSubmittedValues(formData, ORDER_CREATE_ALLOWED_FIELDS);
 
   if (hasUnexpectedFormKeys(formData, ORDER_CREATE_ALLOWED_FIELDS)) {
@@ -594,7 +652,8 @@ export async function createOrder(
     quantity: getOptionalInt(formData.get("quantity")),
     category: getTrimmedString(formData.get("category")),
     requesterName: getTrimmedString(formData.get("requesterName")),
-    requesterContact: getNullableTrimmedString(formData.get("requesterContact")),
+    priority: getOptionalInt(formData.get("priority")),
+    etaDays: getOptionalInt(formData.get("etaDays")),
   });
 
   if (!parsed.success) {
@@ -612,9 +671,7 @@ export async function createOrder(
     const created = await prisma.order.create({
       data: {
         ...parsed.data,
-        priority: 3,
-        etaDays: initialEtaDays,
-        etaTargetDate: addDays(new Date(), initialEtaDays),
+        etaTargetDate: addDays(new Date(), parsed.data.etaDays),
         status: "NEW",
         createdByLabel: user.label,
       },
@@ -630,7 +687,6 @@ export async function createOrder(
         quantity: null,
         category: null,
         requesterName: null,
-        requesterContact: null,
         priority: null,
         etaDays: null,
         status: null,
@@ -646,7 +702,6 @@ export async function createOrder(
         quantity: created.quantity,
         category: created.category,
         requesterName: created.requesterName,
-        requesterContact: created.requesterContact,
         priority: created.priority,
         etaDays: created.etaDays,
         status: created.status,

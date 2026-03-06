@@ -3,9 +3,44 @@ import { prisma } from "@/lib/prisma";
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS_PER_SCOPE_IP = 8;
+const RATE_LIMIT_QUERY_TIMEOUT_MS = 2000;
 
-export const AUTH_ATTEMPT_SCOPES = ["login", "elevate"] as const;
+export const AUTH_ATTEMPT_SCOPES = [
+  "login",
+  "elevate",
+  "vendor_capture",
+] as const;
 export type AuthAttemptScope = (typeof AUTH_ATTEMPT_SCOPES)[number];
+
+function logRateLimitDebug(event: string, details?: Record<string, unknown>) {
+  const timestamp = new Date().toISOString();
+  if (details) {
+    console.warn(`[Auth RateLimit] ${timestamp} ${event}`, details);
+    return;
+  }
+  console.warn(`[Auth RateLimit] ${timestamp} ${event}`);
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutErrorMessage: string,
+): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(timeoutErrorMessage));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
 
 export async function getRequestIpAddress(): Promise<string> {
   const headerStore = await headers();
@@ -36,17 +71,32 @@ export async function isAuthAttemptRateLimited({
   ipAddress: string;
 }): Promise<boolean> {
   const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+  const startedAt = Date.now();
 
-  const ipFailuresForScope = await prisma.loginAttempt.count({
-    where: {
-      success: false,
+  try {
+    const ipFailuresForScope = await withTimeout(
+      prisma.loginAttempt.count({
+        where: {
+          success: false,
+          scope,
+          ipAddress,
+          createdAt: { gte: windowStart },
+        },
+      }),
+      RATE_LIMIT_QUERY_TIMEOUT_MS,
+      "Rate-limit count timed out.",
+    );
+
+    return ipFailuresForScope >= MAX_FAILED_ATTEMPTS_PER_SCOPE_IP;
+  } catch (error) {
+    logRateLimitDebug("count-failed-fail-open", {
       scope,
       ipAddress,
-      createdAt: { gte: windowStart },
-    },
-  });
-
-  return ipFailuresForScope >= MAX_FAILED_ATTEMPTS_PER_SCOPE_IP;
+      elapsedMs: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
 }
 
 export async function recordAuthAttempt({
@@ -60,13 +110,26 @@ export async function recordAuthAttempt({
   ipAddress: string;
   success: boolean;
 }) {
-  await prisma.loginAttempt.create({
-    data: {
+  const startedAt = Date.now();
+  void withTimeout(
+    prisma.loginAttempt.create({
+      data: {
+        scope,
+        email: key,
+        ipAddress,
+        success,
+      },
+    }),
+    RATE_LIMIT_QUERY_TIMEOUT_MS,
+    "Rate-limit write timed out.",
+  ).catch((error) => {
+    logRateLimitDebug("write-failed-skip", {
       scope,
-      email: key,
       ipAddress,
       success,
-    },
+      elapsedMs: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : String(error),
+    });
   });
 }
 

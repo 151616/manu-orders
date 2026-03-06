@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { OrderCategory, OrderStatus } from "@prisma/client";
 import {
   listOrders,
   removeOrderFromList,
@@ -15,6 +14,8 @@ import {
   ORDER_CATEGORY_LABELS,
   ORDER_STATUS_LABELS,
   ORDER_STATUSES,
+  type OrderCategory,
+  type OrderStatus,
 } from "@/lib/order-domain";
 import { getEtaDeltaDays, getRemainingEtaDays } from "@/lib/eta";
 
@@ -356,7 +357,10 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       <p className="text-[11px] uppercase tracking-wide text-black/50">
                         Category
                       </p>
-                      <p>{ORDER_CATEGORY_LABELS[order.category]}</p>
+                      <p>
+                        {ORDER_CATEGORY_LABELS[order.category as OrderCategory] ??
+                          order.category}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-black/50">

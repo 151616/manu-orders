@@ -16,7 +16,10 @@ type NavItem = {
 
 function isPathActive(pathname: string, href: string) {
   if (href === "/queue") {
-    return pathname === "/queue" || pathname.startsWith("/orders/");
+    return (
+      pathname === "/queue" ||
+      (pathname.startsWith("/orders/") && pathname !== "/orders/new")
+    );
   }
 
   if (href === "/orders/new") {
@@ -59,11 +62,10 @@ export function TopNav({ user }: TopNavProps) {
     { href: "/bookmarks", label: "Bookmarks" },
     ...(canMutate ? [{ href: "/trash", label: "Trash" }] : []),
     ...(!canMutate ? [{ href: "/elevate", label: "Elevate" }] : []),
-    ...(canMutate ? [{ href: "/users", label: "Users" }] : []),
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/10 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur-md">
       <nav className="mx-auto w-full max-w-5xl px-3 py-2 sm:px-4 sm:py-3">
         <div className="flex items-center justify-between gap-3">
           <Link href="/queue" className="text-base font-bold tracking-tight text-black">
@@ -88,7 +90,7 @@ export function TopNav({ user }: TopNavProps) {
           </div>
         </div>
 
-        <div className="-mx-1 mt-3 flex items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {navItems.map((item) => (
             <NavLink
               key={item.href}

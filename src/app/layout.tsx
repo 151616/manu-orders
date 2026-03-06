@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PageTransitionOverlay } from "@/components/page-transition-overlay";
 import { TopNav } from "@/components/top-nav";
 import { FirebaseAnalyticsBootstrap } from "@/components/firebase-analytics-bootstrap";
 import { getSession } from "@/lib/auth";
@@ -33,6 +34,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
         <FirebaseAnalyticsBootstrap />
+        <PageTransitionOverlay />
         {user ? <TopNav user={user} /> : null}
         <main className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
           {children}

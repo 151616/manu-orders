@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { Bookmark } from "@prisma/client";
 import { useActionState } from "react";
-import { deleteBookmark, updateBookmark } from "@/app/bookmarks/actions";
+import {
+  deleteBookmark,
+  updateSiteBookmark,
+  updateTemplateBookmark,
+} from "@/app/bookmarks/actions";
 import { FormMessage } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
@@ -14,25 +18,35 @@ type BookmarkCardProps = {
   canMutate: boolean;
 };
 
-export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
-  const updateAction = updateBookmark.bind(null, bookmark.id);
+function valueFor(
+  submittedValues: Record<string, string>,
+  field: string,
+  fallback: string = "",
+) {
+  return submittedValues[field] ?? fallback;
+}
+
+function TemplateBookmarkCard({
+  bookmark,
+  canMutate,
+}: BookmarkCardProps) {
+  const updateAction = updateTemplateBookmark.bind(null, bookmark.id);
   const deleteAction = deleteBookmark.bind(null, bookmark.id);
   const [state, formAction] = useActionState(updateAction, EMPTY_FORM_STATE);
-  const valueFor = (field: string, fallback: string = "") =>
-    state.submittedValues[field] ?? fallback;
 
   return (
     <article className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-base font-semibold tracking-tight text-black">{bookmark.name}</h3>
-        {canMutate ? (
-          <Link
-            href={`/orders/new?fromBookmark=${bookmark.id}`}
-            className="w-full rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
-          >
-            Create Order From Bookmark
-          </Link>
-        ) : null}
+        <div>
+          <h3 className="text-base font-semibold tracking-tight text-black">{bookmark.name}</h3>
+          <p className="text-xs text-black/55">Template bookmark</p>
+        </div>
+        <Link
+          href={`/orders/new?fromBookmark=${bookmark.id}`}
+          className="w-full rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
+        >
+          Create Order
+        </Link>
       </div>
 
       {state.error ? <FormMessage tone="error" message={state.error} /> : null}
@@ -44,7 +58,7 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               <span className="mb-1 block text-xs font-medium text-black/70">Name</span>
               <input
                 name="name"
-                defaultValue={valueFor("name", bookmark.name)}
+                defaultValue={valueFor(state.submittedValues, "name", bookmark.name)}
                 className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.name ? (
@@ -58,7 +72,11 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               </span>
               <input
                 name="defaultVendor"
-                defaultValue={valueFor("defaultVendor", bookmark.defaultVendor ?? "")}
+                defaultValue={valueFor(
+                  state.submittedValues,
+                  "defaultVendor",
+                  bookmark.defaultVendor ?? "",
+                )}
                 className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.defaultVendor ? (
@@ -74,7 +92,11 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               </span>
               <select
                 name="defaultCategory"
-                defaultValue={valueFor("defaultCategory", bookmark.defaultCategory ?? "")}
+                defaultValue={valueFor(
+                  state.submittedValues,
+                  "defaultCategory",
+                  bookmark.defaultCategory ?? "",
+                )}
                 className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               >
                 <option value="">None</option>
@@ -97,7 +119,11 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               </span>
               <input
                 name="defaultOrderUrl"
-                defaultValue={valueFor("defaultOrderUrl", bookmark.defaultOrderUrl ?? "")}
+                defaultValue={valueFor(
+                  state.submittedValues,
+                  "defaultOrderUrl",
+                  bookmark.defaultOrderUrl ?? "",
+                )}
                 className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.defaultOrderUrl ? (
@@ -114,7 +140,11 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               <textarea
                 name="defaultDescription"
                 rows={3}
-                defaultValue={valueFor("defaultDescription", bookmark.defaultDescription ?? "")}
+                defaultValue={valueFor(
+                  state.submittedValues,
+                  "defaultDescription",
+                  bookmark.defaultDescription ?? "",
+                )}
                 className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
               {state.fieldErrors.defaultDescription ? (
@@ -124,8 +154,8 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
               ) : null}
             </label>
 
-            <div className="sm:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <SubmitButton idleLabel="Save Bookmark" pendingLabel="Saving..." />
+            <div className="sm:col-span-2">
+              <SubmitButton idleLabel="Save Template" pendingLabel="Saving..." />
             </div>
           </form>
 
@@ -147,4 +177,125 @@ export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
       )}
     </article>
   );
+}
+
+function SiteBookmarkCard({
+  bookmark,
+  canMutate,
+}: BookmarkCardProps) {
+  const updateAction = updateSiteBookmark.bind(null, bookmark.id);
+  const deleteAction = deleteBookmark.bind(null, bookmark.id);
+  const [state, formAction] = useActionState(updateAction, EMPTY_FORM_STATE);
+
+  return (
+    <article className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="text-base font-semibold tracking-tight text-black">{bookmark.name}</h3>
+          <p className="text-xs text-black/55">Website bookmark</p>
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Link
+            href={`/orders/new?siteBookmarkId=${bookmark.id}`}
+            className="rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5"
+          >
+            Open Vendor Browser
+          </Link>
+          {bookmark.siteUrl ? (
+            <a
+              href={bookmark.siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-center text-xs font-semibold text-black/80 hover:bg-slate-100"
+            >
+              Open Site
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      {state.error ? <FormMessage tone="error" message={state.error} /> : null}
+
+      {canMutate ? (
+        <>
+          <form action={formAction} className="grid gap-3 sm:grid-cols-2">
+            <label className="sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-black/70">Name</span>
+              <input
+                name="name"
+                defaultValue={valueFor(state.submittedValues, "name", bookmark.name)}
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              />
+              {state.fieldErrors.name ? (
+                <p className="mt-1 text-xs text-red-600">{state.fieldErrors.name}</p>
+              ) : null}
+            </label>
+
+            <label className="sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-black/70">
+                Website URL
+              </span>
+              <input
+                name="siteUrl"
+                defaultValue={valueFor(
+                  state.submittedValues,
+                  "siteUrl",
+                  bookmark.siteUrl ?? "",
+                )}
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              />
+              {state.fieldErrors.siteUrl ? (
+                <p className="mt-1 text-xs text-red-600">{state.fieldErrors.siteUrl}</p>
+              ) : null}
+            </label>
+
+            <label className="sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-black/70">
+                Vendor Hint
+              </span>
+              <input
+                name="siteVendorHint"
+                defaultValue={valueFor(
+                  state.submittedValues,
+                  "siteVendorHint",
+                  bookmark.siteVendorHint ?? "",
+                )}
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              />
+              {state.fieldErrors.siteVendorHint ? (
+                <p className="mt-1 text-xs text-red-600">
+                  {state.fieldErrors.siteVendorHint}
+                </p>
+              ) : null}
+            </label>
+
+            <div className="sm:col-span-2">
+              <SubmitButton idleLabel="Save Website" pendingLabel="Saving..." />
+            </div>
+          </form>
+
+          <form action={deleteAction}>
+            <SubmitButton
+              idleLabel="Move to Trash"
+              pendingLabel="Moving..."
+              className="w-full rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            />
+          </form>
+        </>
+      ) : (
+        <div className="space-y-2 text-sm text-black/75">
+          <p>Vendor Hint: {bookmark.siteVendorHint ?? "N/A"}</p>
+          <p>Website URL: {bookmark.siteUrl ?? "N/A"}</p>
+        </div>
+      )}
+    </article>
+  );
+}
+
+export function BookmarkCard({ bookmark, canMutate }: BookmarkCardProps) {
+  if (bookmark.kind === "SITE") {
+    return <SiteBookmarkCard bookmark={bookmark} canMutate={canMutate} />;
+  }
+
+  return <TemplateBookmarkCard bookmark={bookmark} canMutate={canMutate} />;
 }

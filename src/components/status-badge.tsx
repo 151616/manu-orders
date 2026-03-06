@@ -1,5 +1,4 @@
-import { OrderStatus } from "@prisma/client";
-import { ORDER_STATUS_LABELS } from "@/lib/order-domain";
+import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/order-domain";
 
 const statusClassMap: Record<OrderStatus, string> = {
   NEW: "bg-slate-100 text-slate-800 ring-slate-200",
@@ -12,15 +11,20 @@ const statusClassMap: Record<OrderStatus, string> = {
 };
 
 type StatusBadgeProps = {
-  status: OrderStatus;
+  status: string;
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
+  const normalizedStatus = status as OrderStatus;
+  const className =
+    statusClassMap[normalizedStatus] ?? "bg-slate-100 text-slate-800 ring-slate-200";
+  const label = ORDER_STATUS_LABELS[normalizedStatus] ?? status;
+
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ring-1 ${statusClassMap[status]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ring-1 ${className}`}
     >
-      {ORDER_STATUS_LABELS[status]}
+      {label}
     </span>
   );
 }

@@ -36,6 +36,18 @@ This project uses signed JWT session cookies.
 - All create/update/delete server actions call `requireAdmin()` first.
 - Unauthorized mutation attempts resolve to HTTP 403 via `forbidden()`.
 
+## Vendor URL Extraction Hardening
+- `POST /api/vendor/embed-check` and `POST /api/product-preview` require an authenticated `ADMIN` session.
+- URL fetches only allow `http`/`https`.
+- Localhost, `.local`, and private IP ranges are blocked (SSRF guard).
+- Fetches use strict timeouts and bounded HTML size.
+- Embed mode checks inspect `X-Frame-Options` and CSP `frame-ancestors` before attempting in-app iframe mode.
+
+## Extension Capture Stub Security (v2 Foundation)
+- `POST /api/vendor/capture` is `ADMIN`-only and validates request shape with Zod.
+- Capture attempts are rate-limited by IP (`vendor_capture` scope).
+- Invalid payloads are rejected with safe errors; endpoint currently returns `501` by design.
+
 ## Required Environment Variables
 - `SESSION_SECRET`
 - `SESSION_ISSUER` (default in `.env.example`: `manuqueue-app`)
@@ -72,3 +84,9 @@ This project uses signed JWT session cookies.
 10. Restore/permanent delete check:
    - Restore each item from trash and confirm it reappears.
    - Move to trash again and permanently delete; confirm it no longer appears and cannot be restored.
+11. SSRF guard check for vendor endpoints:
+    - As `ADMIN`, call `/api/product-preview` with `http://127.0.0.1` and with `http://localhost`.
+    - Confirm both are rejected with 400-level errors.
+12. Embed fallback check:
+    - Use a vendor URL known to block iframe embedding.
+    - Confirm `/orders/new` switches to external mode and still allows `Next: Extract`.

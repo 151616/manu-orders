@@ -73,8 +73,9 @@ export async function elevateAction(
       return { error: "Invalid admin code." };
     }
 
-    const teamAccessCode = process.env.TEAM_ACCESS_CODE;
-    const teamAdminCode = process.env.TEAM_ADMIN_CODE ?? process.env.TEAM_MANU_CODE;
+    const teamAccessCode = process.env.TEAM_ACCESS_CODE?.trim() ?? "";
+    const teamAdminCode =
+      (process.env.TEAM_ADMIN_CODE ?? process.env.TEAM_MANU_CODE)?.trim() ?? "";
     if (!teamAccessCode || !teamAdminCode) {
       return { error: "Elevation is unavailable. Contact an administrator." };
     }

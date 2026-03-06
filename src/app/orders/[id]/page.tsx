@@ -15,7 +15,7 @@ import { PriorityStarsDisplay } from "@/components/priority-stars-display";
 import { StatusBadge } from "@/components/status-badge";
 import { requireAuth } from "@/lib/auth";
 import { getEtaDeltaDays, getRemainingEtaDays } from "@/lib/eta";
-import { ORDER_CATEGORY_LABELS } from "@/lib/order-domain";
+import { ORDER_CATEGORY_LABELS, type OrderCategory } from "@/lib/order-domain";
 
 type OrderDetailPageProps = {
   params: Promise<{
@@ -154,7 +154,9 @@ export default async function OrderDetailPage({
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-black/50">Category</p>
-            <p className="text-sm text-black/80">{ORDER_CATEGORY_LABELS[order.category]}</p>
+            <p className="text-sm text-black/80">
+              {ORDER_CATEGORY_LABELS[order.category as OrderCategory] ?? order.category}
+            </p>
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-black/50">Quantity</p>
@@ -167,12 +169,6 @@ export default async function OrderDetailPage({
           <div>
             <p className="text-xs uppercase tracking-wide text-black/50">Requester</p>
             <p className="text-sm text-black/80">{order.requesterName}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-black/50">
-              Requester Contact
-            </p>
-            <p className="text-sm text-black/80">{order.requesterContact ?? "N/A"}</p>
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-black/50">Vendor</p>

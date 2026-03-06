@@ -1,6 +1,8 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 function formatCsvValue(value: unknown) {
   if (value === null || value === undefined) {
     return "\"\"";
@@ -36,7 +38,6 @@ export async function GET() {
     "title",
     "description",
     "requesterName",
-    "requesterContact",
     "vendor",
     "orderNumber",
     "orderUrl",
@@ -61,7 +62,6 @@ export async function GET() {
         order.title,
         order.description,
         order.requesterName,
-        order.requesterContact,
         order.vendor,
         order.orderNumber,
         order.orderUrl,

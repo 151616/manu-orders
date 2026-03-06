@@ -73,3 +73,69 @@ Compress-Archive -Path public/uploads -DestinationPath backups/uploads/uploads-$
 - Keep monthly DB backups for 12 months.
 - Keep one immutable/offline copy.
 - Run restore drills quarterly.
+
+## Vendor-Assisted Ordering (v1)
+
+- `GET /orders/new` supports vendor launch context with:
+  - `siteBookmarkId=<bookmark-id>`
+  - `launchUrl=<encoded-url>`
+- The Vendor Browser flow is:
+  1. `Open` checks iframe viability (`POST /api/vendor/embed-check`).
+  2. If embeddable, an in-app iframe is shown.
+  3. If blocked, UI switches to external mode and instructs user to continue in a tab.
+  4. `Next: Extract` calls `POST /api/product-preview`.
+  5. User reviews preview, clicks `Apply Autofill`, then manually clicks `Create Order`.
+- v1 never auto-submits orders.
+
+## Product Preview Contract
+
+`POST /api/product-preview`
+
+Request:
+
+```json
+{
+  "url": "https://vendor.example/product"
+}
+```
+
+Response (200):
+
+```json
+{
+  "normalizedUrl": "https://vendor.example/product",
+  "title": "Example Product",
+  "description": "Example metadata",
+  "vendor": "Vendor Name",
+  "category": "OTHER",
+  "source": "mixed",
+  "confidence": "medium"
+}
+```
+
+## Extension Capture Contract (v2 Foundation)
+
+- Endpoint: `POST /api/vendor/capture`
+- Current behavior: validates payload and auth, then returns `501` (contract stub only).
+- Auth expectations:
+  - Logged-in `ADMIN` session cookie is required.
+  - Requests are server-validated and rate-limited by IP/scope.
+- Expected request body (`contractVersion: "v1"`):
+
+```json
+{
+  "contractVersion": "v1",
+  "source": "browser-extension",
+  "vendorDomain": "revrobotics.com",
+  "pageUrl": "https://www.revrobotics.com/...",
+  "capturedAt": "2026-03-06T00:00:00.000Z",
+  "selectedItems": [
+    {
+      "title": "Optional title",
+      "sku": "Optional SKU",
+      "quantity": 1,
+      "unitPrice": 12.34
+    }
+  ]
+}
+```

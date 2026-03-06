@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
-const protectedPrefixes = ["/queue", "/orders", "/bookmarks", "/users", "/elevate", "/trash"];
+const protectedPrefixes = ["/queue", "/orders", "/bookmarks", "/elevate", "/trash"];
 
 function isProtectedPath(pathname: string) {
   return protectedPrefixes.some(
@@ -33,7 +33,6 @@ export const config = {
     "/queue/:path*",
     "/orders/:path*",
     "/bookmarks/:path*",
-    "/users/:path*",
     "/trash/:path*",
   ],
 };

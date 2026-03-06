@@ -73,22 +73,6 @@ export function RequesterOrderForm({ order }: RequesterOrderFormProps) {
         </label>
 
         <label>
-          <span className="mb-1 block text-sm font-medium text-black">
-            Requester Contact
-          </span>
-          <input
-            name="requesterContact"
-            defaultValue={valueFor("requesterContact", order.requesterContact ?? "")}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-          />
-          {state.fieldErrors.requesterContact ? (
-            <p className="mt-1 text-xs text-red-600">
-              {state.fieldErrors.requesterContact}
-            </p>
-          ) : null}
-        </label>
-
-        <label>
           <span className="mb-1 block text-sm font-medium text-black">Vendor</span>
           <input
             name="vendor"
