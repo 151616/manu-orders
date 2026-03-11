@@ -1,4 +1,3 @@
-import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
@@ -6,15 +5,60 @@ const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-function createPrismaClient() {
-  const databaseUrl = process.env.DATABASE_URL?.trim();
+function normalizeDatabaseUrl(rawValue: string) {
+  let value = rawValue.trim();
 
-  if (!databaseUrl) {
+  const hasWrappedDoubleQuotes =
+    value.startsWith("\"") && value.endsWith("\"");
+  const hasWrappedSingleQuotes =
+    value.startsWith("'") && value.endsWith("'");
+
+  if (hasWrappedDoubleQuotes || hasWrappedSingleQuotes) {
+    value = value.slice(1, -1).trim();
+  }
+
+  try {
+    const parsed = new URL(value);
+    const host = parsed.hostname.toLowerCase();
+    const isLocalHost =
+      host === "localhost" || host === "127.0.0.1" || host === "::1";
+
+    if (!isLocalHost && !parsed.searchParams.has("sslmode")) {
+      parsed.searchParams.set("sslmode", "require");
+    }
+
+    return parsed.toString();
+  } catch {
+    return value;
+  }
+}
+
+function createPrismaClient() {
+  const databaseUrlRaw = process.env.DATABASE_URL?.trim();
+
+  if (!databaseUrlRaw) {
     throw new Error("DATABASE_URL is not configured.");
   }
 
-  const pool = new Pool({ connectionString: databaseUrl });
-  const adapter = new PrismaPg(pool);
+  const normalizedDatabaseUrl = normalizeDatabaseUrl(databaseUrlRaw);
+  process.env.DATABASE_URL = normalizedDatabaseUrl;
+
+  let ssl: boolean | { rejectUnauthorized: boolean } = false;
+
+  try {
+    const parsed = new URL(normalizedDatabaseUrl);
+    const host = parsed.hostname.toLowerCase();
+    const isLocalHost =
+      host === "localhost" || host === "127.0.0.1" || host === "::1";
+    ssl = !isLocalHost ? { rejectUnauthorized: false } : false;
+  } catch {
+    // Leave ssl at default false if parsing fails; Prisma/pg will surface detailed errors later.
+  }
+
+  const adapter = new PrismaPg({
+    connectionString: normalizedDatabaseUrl,
+    ssl,
+  });
 
   return new PrismaClient({ adapter });
 }

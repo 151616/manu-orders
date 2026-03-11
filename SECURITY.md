@@ -43,10 +43,11 @@ This project uses signed JWT session cookies.
 - Fetches use strict timeouts and bounded HTML size.
 - Embed mode checks inspect `X-Frame-Options` and CSP `frame-ancestors` before attempting in-app iframe mode.
 
-## Extension Capture Stub Security (v2 Foundation)
-- `POST /api/vendor/capture` is `ADMIN`-only and validates request shape with Zod.
+## Extension Capture Security (v2 Minimal)
+- `POST /api/vendor/capture` and `GET /api/vendor/capture` are `ADMIN`-only.
+- Capture payloads are validated with Zod before persistence.
 - Capture attempts are rate-limited by IP (`vendor_capture` scope).
-- Invalid payloads are rejected with safe errors; endpoint currently returns `501` by design.
+- Invalid payloads are rejected with safe errors.
 
 ## Required Environment Variables
 - `SESSION_SECRET`

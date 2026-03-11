@@ -199,7 +199,7 @@ function SiteBookmarkCard({
             href={`/orders/new?siteBookmarkId=${bookmark.id}`}
             className="rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5"
           >
-            Open Vendor Browser
+            Use in New Order
           </Link>
           {bookmark.siteUrl ? (
             <a
@@ -220,18 +220,6 @@ function SiteBookmarkCard({
         <>
           <form action={formAction} className="grid gap-3 sm:grid-cols-2">
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-black/70">Name</span>
-              <input
-                name="name"
-                defaultValue={valueFor(state.submittedValues, "name", bookmark.name)}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              />
-              {state.fieldErrors.name ? (
-                <p className="mt-1 text-xs text-red-600">{state.fieldErrors.name}</p>
-              ) : null}
-            </label>
-
-            <label className="sm:col-span-2">
               <span className="mb-1 block text-xs font-medium text-black/70">
                 Website URL
               </span>
@@ -246,6 +234,18 @@ function SiteBookmarkCard({
               />
               {state.fieldErrors.siteUrl ? (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.siteUrl}</p>
+              ) : null}
+            </label>
+
+            <label className="sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-black/70">Name</span>
+              <input
+                name="name"
+                defaultValue={valueFor(state.submittedValues, "name", bookmark.name)}
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              />
+              {state.fieldErrors.name ? (
+                <p className="mt-1 text-xs text-red-600">{state.fieldErrors.name}</p>
               ) : null}
             </label>
 

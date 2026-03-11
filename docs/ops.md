@@ -79,12 +79,11 @@ Compress-Archive -Path public/uploads -DestinationPath backups/uploads/uploads-$
 - `GET /orders/new` supports vendor launch context with:
   - `siteBookmarkId=<bookmark-id>`
   - `launchUrl=<encoded-url>`
-- The Vendor Browser flow is:
-  1. `Open` checks iframe viability (`POST /api/vendor/embed-check`).
-  2. If embeddable, an in-app iframe is shown.
-  3. If blocked, UI switches to external mode and instructs user to continue in a tab.
-  4. `Next: Extract` calls `POST /api/product-preview`.
-  5. User reviews preview, clicks `Apply Autofill`, then manually clicks `Create Order`.
+- The URL-assisted flow is:
+  1. Paste/fill the final product URL in `Order URL` (from bookmark or manual copy).
+  2. Autofill calls `POST /api/product-preview`.
+  3. User reviews values, presses Tab (or applies) to fill fields.
+  4. User manually clicks `Create Order`.
 - v1 never auto-submits orders.
 
 ## Product Preview Contract
@@ -113,10 +112,11 @@ Response (200):
 }
 ```
 
-## Extension Capture Contract (v2 Foundation)
+## Extension Capture Contract (v2 Minimal)
 
-- Endpoint: `POST /api/vendor/capture`
-- Current behavior: validates payload and auth, then returns `501` (contract stub only).
+- Endpoints:
+  - `POST /api/vendor/capture` stores a capture payload.
+  - `GET /api/vendor/capture` returns the latest capture for the current admin session.
 - Auth expectations:
   - Logged-in `ADMIN` session cookie is required.
   - Requests are server-validated and rate-limited by IP/scope.
@@ -139,3 +139,15 @@ Response (200):
   ]
 }
 ```
+
+## Chrome Extension Install (Local Unpacked)
+
+1. Open `chrome://extensions`.
+2. Enable `Developer mode`.
+3. Click `Load unpacked`.
+4. Select the repo folder: `extension/`
+5. Open the extension popup:
+   - Set ManuQueue base URL.
+   - Login to ManuQueue as `ADMIN`.
+   - Click `Capture Current Tab`.
+6. In ManuQueue `/orders/new`, use `Extension Capture (v2)` -> `Use Latest Capture`.

@@ -30,6 +30,14 @@ enum BookmarkKind {
   SITE
 }
 
+enum ManuRequestType {
+  CNC
+  DRILL
+  TAP
+  CUT
+  OTHER
+}
+
 model Order {
   id               String        @id @default(uuid())
   createdAt        DateTime      @default(now())
@@ -96,6 +104,37 @@ model OrderAttachment {
   order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, createdAt])
+}
+
+model VendorCapture {
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+  createdByLabel String
+  source         String
+  vendorDomain   String
+  pageUrl        String
+  capturedAt     DateTime
+  selectedItems  Json?
+
+  @@index([createdByLabel, createdAt])
+}
+
+model ManuRequest {
+  id               String          @id @default(uuid())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  title            String
+  description      String?
+  type             ManuRequestType
+  otherType        String?
+  fileStoragePath  String?
+  fileOriginalName String?
+  fileContentType  String?
+  fileSizeBytes    Int?
+  isFinished       Boolean         @default(false)
+  createdByLabel   String
+
+  @@index([isFinished, createdAt])
 }
 
 model LoginAttempt {

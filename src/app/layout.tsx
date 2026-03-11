@@ -5,6 +5,7 @@ import { PageTransitionOverlay } from "@/components/page-transition-overlay";
 import { TopNav } from "@/components/top-nav";
 import { FirebaseAnalyticsBootstrap } from "@/components/firebase-analytics-bootstrap";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,29 @@ export default async function RootLayout({
 }>) {
   const user = await getSession();
 
+  let siteBookmarks: Array<{ id: string; name: string }> = [];
+  if (user) {
+    try {
+      siteBookmarks = await prisma.bookmark.findMany({
+        where: {
+          kind: "SITE",
+          createdByLabel: user.label,
+          isDeleted: false,
+          siteUrl: { not: null },
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: [{ createdAt: "desc" }],
+        take: 20,
+      });
+    } catch (error) {
+      console.error("[RootLayout] Failed to load site bookmarks.", error);
+      siteBookmarks = [];
+    }
+  }
+
   return (
     <html lang="en">
       <body
@@ -35,7 +59,7 @@ export default async function RootLayout({
       >
         <FirebaseAnalyticsBootstrap />
         <PageTransitionOverlay />
-        {user ? <TopNav user={user} /> : null}
+        {user ? <TopNav user={user} siteBookmarks={siteBookmarks} /> : null}
         <main className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
           {children}
         </main>

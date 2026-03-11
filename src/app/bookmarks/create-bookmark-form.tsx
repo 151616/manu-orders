@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import {
   createSiteBookmark,
   createTemplateBookmark,
@@ -31,6 +31,19 @@ export function CreateBookmarkForm() {
     EMPTY_FORM_STATE,
   );
 
+  useEffect(() => {
+    if (!siteState.error) {
+      return;
+    }
+
+    console.error("[ManuQueue Bookmark Debug] createSiteBookmark failed", {
+      error: siteState.error,
+      fieldErrors: siteState.fieldErrors,
+      submittedValues: siteState.submittedValues,
+      at: new Date().toISOString(),
+    });
+  }, [siteState]);
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <form
@@ -45,18 +58,6 @@ export function CreateBookmarkForm() {
 
         <div className="grid gap-4">
           <label>
-            <span className="mb-1 block text-sm font-medium text-black">Name</span>
-            <input
-              name="name"
-              defaultValue={useValueFor(siteState.submittedValues, "name")}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-            />
-            {siteState.fieldErrors.name ? (
-              <p className="mt-1 text-xs text-red-600">{siteState.fieldErrors.name}</p>
-            ) : null}
-          </label>
-
-          <label>
             <span className="mb-1 block text-sm font-medium text-black">Website URL</span>
             <input
               name="siteUrl"
@@ -66,6 +67,18 @@ export function CreateBookmarkForm() {
             />
             {siteState.fieldErrors.siteUrl ? (
               <p className="mt-1 text-xs text-red-600">{siteState.fieldErrors.siteUrl}</p>
+            ) : null}
+          </label>
+
+          <label>
+            <span className="mb-1 block text-sm font-medium text-black">Name</span>
+            <input
+              name="name"
+              defaultValue={useValueFor(siteState.submittedValues, "name")}
+              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+            />
+            {siteState.fieldErrors.name ? (
+              <p className="mt-1 text-xs text-red-600">{siteState.fieldErrors.name}</p>
             ) : null}
           </label>
 

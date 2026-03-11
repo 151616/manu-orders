@@ -86,97 +86,102 @@ function jsonError(status: number, error: string) {
 }
 
 export async function POST(request: NextRequest) {
-  let payload: unknown = null;
   try {
-    payload = await request.json();
-  } catch {
-    payload = null;
-  }
+    let payload: unknown = null;
+    try {
+      payload = await request.json();
+    } catch {
+      payload = null;
+    }
 
-  const parsed = loginSchema.safeParse({
-    role:
-      payload &&
-      typeof payload === "object" &&
-      "role" in payload &&
-      typeof payload.role === "string"
-        ? payload.role
-        : "",
-    roleCode:
-      payload &&
-      typeof payload === "object" &&
-      "roleCode" in payload &&
-      typeof payload.roleCode === "string"
-        ? payload.roleCode.trim()
-        : "",
-  });
+    const parsed = loginSchema.safeParse({
+      role:
+        payload &&
+        typeof payload === "object" &&
+        "role" in payload &&
+        typeof payload.role === "string"
+          ? payload.role
+          : "",
+      roleCode:
+        payload &&
+        typeof payload === "object" &&
+        "roleCode" in payload &&
+        typeof payload.roleCode === "string"
+          ? payload.roleCode.trim()
+          : "",
+    });
 
-  const ipAddress = getRequestIpAddress(request);
-  const limiterKey = parsed.success
-    ? roleRateLimitKey(parsed.data.role)
-    : normalizeLoginEmail("role:invalid");
+    const ipAddress = getRequestIpAddress(request);
+    const limiterKey = parsed.success
+      ? roleRateLimitKey(parsed.data.role)
+      : normalizeLoginEmail("role:invalid");
 
-  const rateLimited = await isAuthAttemptRateLimited({
-    scope: "login",
-    ipAddress,
-  });
-  if (rateLimited) {
-    return jsonError(429, "Too many login attempts. Please try again later.");
-  }
+    const rateLimited = await isAuthAttemptRateLimited({
+      scope: "login",
+      ipAddress,
+    });
+    if (rateLimited) {
+      return jsonError(429, "Too many login attempts. Please try again later.");
+    }
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      await recordAuthAttempt({
+        scope: "login",
+        key: limiterKey,
+        ipAddress,
+        success: false,
+      });
+      return jsonError(400, "Invalid access code.");
+    }
+
+    const expectedCode = getExpectedRoleCode(parsed.data.role);
+    if (!expectedCode) {
+      return jsonError(503, "Login is unavailable. Contact an administrator.");
+    }
+
+    const isValid = secureCodeMatch(parsed.data.roleCode, expectedCode);
+    if (!isValid) {
+      await recordAuthAttempt({
+        scope: "login",
+        key: limiterKey,
+        ipAddress,
+        success: false,
+      });
+      return jsonError(401, "Invalid access code.");
+    }
+
+    const identity = TEAM_ROLE_IDENTITIES[parsed.data.role];
+    const token = await signSessionToken({
+      userId: identity.id,
+      role: identity.role,
+      name: identity.name,
+    });
+
     await recordAuthAttempt({
       scope: "login",
       key: limiterKey,
       ipAddress,
-      success: false,
+      success: true,
     });
-    return jsonError(400, "Invalid access code.");
-  }
 
-  const expectedCode = getExpectedRoleCode(parsed.data.role);
-  if (!expectedCode) {
-    return jsonError(503, "Login is unavailable. Contact an administrator.");
-  }
+    const response = NextResponse.json(
+      {
+        redirectTo: "/queue",
+      },
+      { status: 200 },
+    );
 
-  const isValid = secureCodeMatch(parsed.data.roleCode, expectedCode);
-  if (!isValid) {
-    await recordAuthAttempt({
-      scope: "login",
-      key: limiterKey,
-      ipAddress,
-      success: false,
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_MAX_AGE_SECONDS,
     });
-    return jsonError(401, "Invalid access code.");
+
+    return response;
+  } catch (error) {
+    console.error("[Auth Login] Unexpected failure.", error);
+    return jsonError(503, "Login is temporarily unavailable. Please try again.");
   }
-
-  const identity = TEAM_ROLE_IDENTITIES[parsed.data.role];
-  const token = await signSessionToken({
-    userId: identity.id,
-    role: identity.role,
-    name: identity.name,
-  });
-
-  await recordAuthAttempt({
-    scope: "login",
-    key: limiterKey,
-    ipAddress,
-    success: true,
-  });
-
-  const response = NextResponse.json(
-    {
-      redirectTo: "/queue",
-    },
-    { status: 200 },
-  );
-
-  response.cookies.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE_SECONDS,
-  });
-
-  return response;
 }

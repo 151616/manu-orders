@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "ManuQueue Capture",
+  "version": "0.1.0",
+  "description": "Capture the current vendor page URL into ManuQueue.",
+  "permissions": ["tabs", "storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "ManuQueue Capture",
+    "default_popup": "popup.html"
+  }
+}

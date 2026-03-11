@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ManuQueue Capture</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        width: 340px;
+      }
+      .wrap {
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+      .title {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      label {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 12px;
+        background: #fff;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      button {
+        border: 1px solid #0f172a;
+        border-radius: 8px;
+        background: #0f172a;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: #fff;
+        color: #0f172a;
+        border-color: #cbd5e1;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .hint {
+        font-size: 11px;
+        color: #475569;
+      }
+      .status {
+        font-size: 12px;
+        line-height: 1.35;
+        padding: 8px;
+        border-radius: 8px;
+        background: #e2e8f0;
+      }
+      .status.error {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .status.success {
+        background: #dcfce7;
+        color: #166534;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="title">ManuQueue V2 Capture</div>
+
+      <label for="baseUrl">ManuQueue Base URL</label>
+      <input id="baseUrl" placeholder="https://manuqueue--manuqueue.us-central1.hosted.app" />
+
+      <div class="row">
+        <button id="saveBtn" class="secondary" type="button">Save URL</button>
+        <button id="openBtn" class="secondary" type="button">Open ManuQueue</button>
+      </div>
+
+      <button id="captureBtn" type="button">Capture Current Tab</button>
+      <div class="hint">
+        Login as ADMIN in ManuQueue first. This sends the active tab URL to <code>/api/vendor/capture</code>.
+      </div>
+      <div id="status" class="status">Ready.</div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

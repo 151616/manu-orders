@@ -7,12 +7,18 @@ import { AuthUser } from "@/lib/auth";
 
 type TopNavProps = {
   user: Pick<AuthUser, "name" | "role">;
+  siteBookmarks: Array<{
+    id: string;
+    name: string;
+  }>;
 };
 
 type NavItem = {
   href: string;
   label: string;
 };
+
+const MAX_VISIBLE_SITE_BOOKMARKS = 4;
 
 function isPathActive(pathname: string, href: string) {
   if (href === "/queue") {
@@ -52,14 +58,17 @@ function NavLink({
   );
 }
 
-export function TopNav({ user }: TopNavProps) {
+export function TopNav({ user, siteBookmarks }: TopNavProps) {
   const pathname = usePathname();
   const canMutate = user.role === "ADMIN";
+  const visibleSiteBookmarks = siteBookmarks.slice(0, MAX_VISIBLE_SITE_BOOKMARKS);
+  const overflowSiteBookmarks = siteBookmarks.slice(MAX_VISIBLE_SITE_BOOKMARKS);
 
   const navItems: NavItem[] = [
     { href: "/queue", label: "Queue" },
     ...(canMutate ? [{ href: "/orders/new", label: "New Order" }] : []),
     { href: "/bookmarks", label: "Bookmarks" },
+    { href: "/tracking", label: "Tracking" },
     ...(canMutate ? [{ href: "/trash", label: "Trash" }] : []),
     ...(!canMutate ? [{ href: "/elevate", label: "Elevate" }] : []),
   ];
@@ -99,6 +108,42 @@ export function TopNav({ user }: TopNavProps) {
               pathname={pathname}
             />
           ))}
+
+          {siteBookmarks.length > 0 ? (
+            <span
+              aria-hidden="true"
+              className="mx-1 hidden h-5 w-px bg-black/15 sm:inline-block"
+            />
+          ) : null}
+
+          {visibleSiteBookmarks.map((bookmark) => (
+            <Link
+              key={bookmark.id}
+              href={`/orders/new?siteBookmarkId=${bookmark.id}`}
+              className="whitespace-nowrap rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-900 hover:border-sky-400 hover:bg-sky-100"
+            >
+              {bookmark.name}
+            </Link>
+          ))}
+
+          {overflowSiteBookmarks.length > 0 ? (
+            <details className="relative">
+              <summary className="cursor-pointer list-none whitespace-nowrap rounded-full border border-sky-300 bg-white px-3 py-1.5 text-sm font-medium text-sky-900 hover:border-sky-400 hover:bg-sky-50">
+                More Sites
+              </summary>
+              <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+                {overflowSiteBookmarks.map((bookmark) => (
+                  <Link
+                    key={bookmark.id}
+                    href={`/orders/new?siteBookmarkId=${bookmark.id}`}
+                    className="block rounded-md px-2 py-1.5 text-sm text-black/85 hover:bg-sky-50 hover:text-black"
+                  >
+                    {bookmark.name}
+                  </Link>
+                ))}
+              </div>
+            </details>
+          ) : null}
         </div>
 
         <p className="mt-2 text-xs text-black/60 sm:hidden">{user.name}</p>

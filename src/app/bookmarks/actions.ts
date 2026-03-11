@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { requireAdmin, requireAuth } from "@/lib/auth";
 import { handleServerMutationError } from "@/lib/action-errors";
 import {
@@ -128,6 +129,163 @@ function bookmarkNotFoundPath(target: BookmarkTrashRedirectTarget) {
   return "/bookmarks?saved=bookmark-not-found";
 }
 
+function errorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+function getPrismaErrorCode(error: unknown): string | null {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code;
+  }
+
+  return null;
+}
+
+function getErrorName(error: unknown): string {
+  if (error && typeof error === "object" && "name" in error) {
+    const value = (error as { name?: unknown }).name;
+    if (typeof value === "string" && value.length > 0) {
+      return value;
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.constructor.name;
+  }
+
+  return "UnknownError";
+}
+
+function getErrorDiagnosticTag(error: unknown) {
+  const code = getPrismaErrorCode(error) ?? "none";
+  return `${getErrorName(error)}:${code}`;
+}
+
+function isSiteBookmarkSchemaError(error: unknown) {
+  const message = errorMessage(error).toLowerCase();
+  const code = getPrismaErrorCode(error);
+
+  if (code === "P2021" || code === "P2022") {
+    return true;
+  }
+
+  return (
+    message.includes("bookmarkkind") ||
+    message.includes("column") && message.includes("kind") && message.includes("bookmark") ||
+    message.includes("siteurl") ||
+    message.includes("sitevendorhint") ||
+    message.includes("invalid input value for enum") ||
+    message.includes("does not exist in current database")
+  );
+}
+
+function siteBookmarkFailureHint(error: unknown) {
+  const message = errorMessage(error).toLowerCase();
+  const code = getPrismaErrorCode(error);
+  const errorName = getErrorName(error).toLowerCase();
+
+  if (
+    message.includes("environment variable not found") &&
+    message.includes("database_url")
+  ) {
+    return "db-url-missing";
+  }
+
+  if (
+    message.includes("can't reach database server") ||
+    message.includes("connect etimedout") ||
+    message.includes("econnrefused") ||
+    message.includes("no pg_hba.conf entry")
+  ) {
+    return "db-unreachable";
+  }
+
+  if (
+    message.includes("authentication failed") ||
+    message.includes("password authentication failed")
+  ) {
+    return "db-auth-failed";
+  }
+
+  if (message.includes("database") && message.includes("does not exist")) {
+    return "db-not-found";
+  }
+
+  if (
+    message.includes("ssl") ||
+    message.includes("certificate") ||
+    message.includes("tls")
+  ) {
+    return "db-ssl-config";
+  }
+
+  if (code === "P1001" || message.includes("can't reach database server")) {
+    return "database-unreachable";
+  }
+
+  if (code === "P1002" || message.includes("timed out")) {
+    return "database-timeout";
+  }
+
+  if (isSiteBookmarkSchemaError(error)) {
+    return "bookmark-schema-outdated";
+  }
+
+  if (message.includes("permission denied")) {
+    return "database-permission-denied";
+  }
+
+  if (message.includes("must be owner of")) {
+    return "database-owner-required";
+  }
+
+  if (
+    message.includes("remaining connection slots are reserved") ||
+    message.includes("too many clients already")
+  ) {
+    return "database-connection-limit";
+  }
+
+  if (code) {
+    return `prisma-${code.toLowerCase()}`;
+  }
+
+  if (errorName.includes("initialization")) {
+    return "prisma-init-failed";
+  }
+
+  return "unknown";
+}
+
+async function ensureSiteBookmarkSchemaCompatibility() {
+  await prisma.$executeRawUnsafe(`
+    DO $$
+    BEGIN
+      CREATE TYPE "BookmarkKind" AS ENUM ('TEMPLATE', 'SITE');
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+    END
+    $$;
+  `);
+
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "Bookmark" ADD COLUMN IF NOT EXISTS "kind" "BookmarkKind" NOT NULL DEFAULT 'TEMPLATE';`,
+  );
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "Bookmark" ADD COLUMN IF NOT EXISTS "siteUrl" TEXT;`,
+  );
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "Bookmark" ADD COLUMN IF NOT EXISTS "siteVendorHint" TEXT;`,
+  );
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "Bookmark_createdByLabel_isDeleted_kind_createdAt_idx"
+    ON "Bookmark"("createdByLabel", "isDeleted", "kind", "createdAt");
+  `);
+}
+
 async function createBookmarkAuditLog({
   role,
   action,
@@ -137,17 +295,26 @@ async function createBookmarkAuditLog({
   action: string;
   summary: string;
 }) {
-  await prisma.orderActivity.create({
-    data: {
-      orderId: null,
+  try {
+    await prisma.orderActivity.create({
+      data: {
+        orderId: null,
+        role,
+        action,
+        details: JSON.stringify({
+          summary,
+          diffs: [],
+        }),
+      },
+    });
+  } catch (error) {
+    console.error("[bookmarks] createBookmarkAuditLog failed (non-blocking).", {
       role,
       action,
-      details: JSON.stringify({
-        summary,
-        diffs: [],
-      }),
-    },
-  });
+      summary,
+      error: errorMessage(error),
+    });
+  }
 }
 
 export async function listTemplateBookmarksForCurrentUser() {
@@ -178,9 +345,8 @@ export async function listTemplateBookmarksForCurrentUser() {
 
 export async function listSiteBookmarksForCurrentUser() {
   const user = await requireAuth();
-
-  try {
-    return await withTimeout(
+  const findBookmarks = () =>
+    withTimeout(
       prisma.bookmark.findMany({
         where: {
           kind: "SITE",
@@ -192,11 +358,31 @@ export async function listSiteBookmarksForCurrentUser() {
       LIST_BOOKMARKS_TIMEOUT_MS,
       "listSiteBookmarksForCurrentUser query timed out.",
     );
+
+  try {
+    return await findBookmarks();
   } catch (error) {
+    if (isSiteBookmarkSchemaError(error)) {
+      try {
+        await ensureSiteBookmarkSchemaCompatibility();
+        return await findBookmarks();
+      } catch (repairError) {
+        console.error(
+          "[bookmarks] listSiteBookmarksForCurrentUser schema repair failed.",
+          {
+            role: user.role,
+            label: user.label,
+            originalError: errorMessage(error),
+            repairError: errorMessage(repairError),
+          },
+        );
+      }
+    }
+
     console.error("[bookmarks] listSiteBookmarksForCurrentUser failed.", {
       role: user.role,
       label: user.label,
-      error,
+      error: errorMessage(error),
     });
     return [];
   }
@@ -253,14 +439,42 @@ export async function getSiteBookmarkById(bookmarkId: string) {
     return null;
   }
 
-  return prisma.bookmark.findFirst({
-    where: {
-      id: parsedBookmarkId,
-      kind: "SITE",
-      createdByLabel: user.label,
-      isDeleted: false,
-    },
-  });
+  const findBookmark = () =>
+    prisma.bookmark.findFirst({
+      where: {
+        id: parsedBookmarkId,
+        kind: "SITE",
+        createdByLabel: user.label,
+        isDeleted: false,
+      },
+    });
+
+  try {
+    return await findBookmark();
+  } catch (error) {
+    if (isSiteBookmarkSchemaError(error)) {
+      try {
+        await ensureSiteBookmarkSchemaCompatibility();
+        return await findBookmark();
+      } catch (repairError) {
+        console.error("[bookmarks] getSiteBookmarkById schema repair failed.", {
+          role: user.role,
+          label: user.label,
+          bookmarkId: parsedBookmarkId,
+          originalError: errorMessage(error),
+          repairError: errorMessage(repairError),
+        });
+      }
+    }
+
+    console.error("[bookmarks] getSiteBookmarkById failed.", {
+      role: user.role,
+      label: user.label,
+      bookmarkId: parsedBookmarkId,
+      error: errorMessage(error),
+    });
+    return null;
+  }
 }
 
 export async function createTemplateBookmark(
@@ -349,8 +563,8 @@ export async function createSiteBookmark(
     };
   }
 
-  try {
-    const created = await prisma.bookmark.create({
+  const createRecord = () =>
+    prisma.bookmark.create({
       data: {
         kind: "SITE",
         name: parsed.data.name,
@@ -360,15 +574,63 @@ export async function createSiteBookmark(
       },
     });
 
+  try {
+    const created = await createRecord();
+
     await createBookmarkAuditLog({
       role: user.role,
       action: "BOOKMARK_SITE_CREATED",
       summary: `Site bookmark created (${created.id}).`,
     });
   } catch (error) {
+    const shouldAttemptRepair = isSiteBookmarkSchemaError(error);
+
+    if (shouldAttemptRepair) {
+      try {
+        await ensureSiteBookmarkSchemaCompatibility();
+        const createdAfterRepair = await createRecord();
+        await createBookmarkAuditLog({
+          role: user.role,
+          action: "BOOKMARK_SITE_CREATED",
+          summary: `Site bookmark created (${createdAfterRepair.id}).`,
+        });
+
+        revalidatePath("/bookmarks");
+        revalidatePath("/orders/new");
+        redirect("/bookmarks?saved=bookmark-created");
+      } catch (repairError) {
+        return {
+          success: null,
+          error: handleServerMutationError(
+            "createSiteBookmark-schema-repair",
+            repairError,
+            "Website bookmarks need a DB update and repair failed. Please try again shortly.",
+          ),
+          fieldErrors: {},
+          submittedValues,
+        };
+      }
+    }
+
+    const hint = siteBookmarkFailureHint(error);
+    console.error("[bookmarks] createSiteBookmark failed.", {
+      role: user.role,
+      label: user.label,
+      hint,
+      diag: getErrorDiagnosticTag(error),
+      code: getPrismaErrorCode(error),
+      error: errorMessage(error),
+    });
+
     return {
       success: null,
-      error: handleServerMutationError("createSiteBookmark", error),
+      error: handleServerMutationError(
+        "createSiteBookmark",
+        error,
+        `Website bookmark save failed (${hint}; diag:${getErrorDiagnosticTag(
+          error,
+        )}). Please try again.`,
+      ),
       fieldErrors: {},
       submittedValues,
     };
@@ -502,7 +764,7 @@ export async function updateSiteBookmark(
     };
   }
 
-  try {
+  const runUpdate = async () => {
     const existing = await prisma.bookmark.findFirst({
       where: {
         id: parsedBookmarkId,
@@ -514,10 +776,13 @@ export async function updateSiteBookmark(
 
     if (!existing) {
       return {
-        success: null,
-        error: "Bookmark not found.",
-        fieldErrors: {},
-        submittedValues,
+        ok: false as const,
+        state: {
+          success: null,
+          error: "Bookmark not found.",
+          fieldErrors: {},
+          submittedValues,
+        } satisfies FormActionState,
       };
     }
 
@@ -535,7 +800,41 @@ export async function updateSiteBookmark(
       action: "BOOKMARK_SITE_UPDATED",
       summary: `Site bookmark updated (${parsedBookmarkId}).`,
     });
+
+    return { ok: true as const };
+  };
+
+  try {
+    const updated = await runUpdate();
+    if (!updated.ok) {
+      return updated.state;
+    }
   } catch (error) {
+    if (isSiteBookmarkSchemaError(error)) {
+      try {
+        await ensureSiteBookmarkSchemaCompatibility();
+        const repairedUpdate = await runUpdate();
+        if (!repairedUpdate.ok) {
+          return repairedUpdate.state;
+        }
+
+        revalidatePath("/bookmarks");
+        revalidatePath("/orders/new");
+        redirect("/bookmarks?saved=bookmark-updated");
+      } catch (repairError) {
+        return {
+          success: null,
+          error: handleServerMutationError(
+            "updateSiteBookmark-schema-repair",
+            repairError,
+            "Website bookmarks need a DB update and repair failed. Please try again shortly.",
+          ),
+          fieldErrors: {},
+          submittedValues,
+        };
+      }
+    }
+
     return {
       success: null,
       error: handleServerMutationError("updateSiteBookmark", error),

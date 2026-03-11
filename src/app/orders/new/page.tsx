@@ -59,11 +59,13 @@ export default async function NewOrderPage({ searchParams }: NewOrderPageProps) 
               templateBookmark?.defaultVendor ?? siteBookmark?.siteVendorHint ?? "",
             orderNumber: "",
             orderUrl:
-              launchUrl ?? siteBookmark?.siteUrl ?? templateBookmark?.defaultOrderUrl ?? "",
+              launchUrl ??
+              siteBookmark?.siteUrl ??
+              templateBookmark?.defaultOrderUrl ??
+              "",
             quantity: "",
             category: templateBookmark?.defaultCategory ?? "OTHER",
           }}
-          initialVendorLaunchUrl={launchUrl ?? siteBookmark?.siteUrl ?? null}
         />
       ) : (
         <div className="rounded-lg border border-black/10 bg-white p-6 text-sm text-black/75">

@@ -6,13 +6,14 @@ import {
   normalizeLoginEmail,
   recordAuthAttempt,
 } from "@/lib/login-rate-limit";
+/*  */import { prisma } from "@/lib/prisma";
 
 const captureRequestSchema = z.object({
   contractVersion: z.literal("v1"),
   source: z.literal("browser-extension"),
   vendorDomain: z.string().trim().min(1).max(200),
-  pageUrl: z.string().trim().min(1).max(500),
-  capturedAt: z.string().trim().min(1).max(100),
+  pageUrl: z.string().trim().url().max(500),
+  capturedAt: z.string().datetime(),
   selectedItems: z
     .array(
       z.object({
@@ -40,14 +41,96 @@ function getRequestIpAddress(request: NextRequest) {
   return "unknown";
 }
 
-export async function POST(request: NextRequest) {
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutErrorMessage: string,
+): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(timeoutErrorMessage));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
+
+async function requireAdminSession() {
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
+    };
   }
   if (session.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "Forbidden." }, { status: 403 }),
+    };
   }
+
+  return { ok: true as const, session };
+}
+
+export async function GET() {
+  const auth = await requireAdminSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  let latestCapture = null;
+  try {
+    latestCapture = await withTimeout(
+      prisma.vendorCapture.findFirst({
+        where: {
+          createdByLabel: auth.session.label,
+        },
+        orderBy: [{ createdAt: "desc" }],
+      }),
+      8000,
+      "Capture lookup timed out.",
+    );
+  } catch {
+    return NextResponse.json(
+      { error: "Capture lookup is temporarily unavailable." },
+      { status: 503 },
+    );
+  }
+
+  if (!latestCapture) {
+    return NextResponse.json({ capture: null }, { status: 200 });
+  }
+
+  return NextResponse.json(
+    {
+      capture: {
+        id: latestCapture.id,
+        source: latestCapture.source,
+        vendorDomain: latestCapture.vendorDomain,
+        pageUrl: latestCapture.pageUrl,
+        capturedAt: latestCapture.capturedAt.toISOString(),
+        selectedItems: latestCapture.selectedItems,
+        createdAt: latestCapture.createdAt.toISOString(),
+      },
+    },
+    { status: 200 },
+  );
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await requireAdminSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
+  const { session } = auth;
 
   const ipAddress = getRequestIpAddress(request);
   const rateLimited = await isAuthAttemptRateLimited({
@@ -93,18 +176,54 @@ export async function POST(request: NextRequest) {
     success: true,
   });
 
+  const capturedAt = new Date(parsed.data.capturedAt);
+  if (Number.isNaN(capturedAt.getTime())) {
+    return NextResponse.json(
+      {
+        error: "Invalid capturedAt value.",
+        contractVersion: "v1",
+      },
+      { status: 400 },
+    );
+  }
+
+  let created;
+  try {
+    created = await withTimeout(
+      prisma.vendorCapture.create({
+        data: {
+          createdByLabel: session.label,
+          source: parsed.data.source,
+          vendorDomain: parsed.data.vendorDomain,
+          pageUrl: parsed.data.pageUrl,
+          capturedAt,
+          ...(parsed.data.selectedItems
+            ? { selectedItems: parsed.data.selectedItems }
+            : {}),
+        },
+      }),
+      8000,
+      "Capture save timed out.",
+    );
+  } catch {
+    return NextResponse.json(
+      { error: "Capture save is temporarily unavailable." },
+      { status: 503 },
+    );
+  }
+
   return NextResponse.json(
     {
-      error: "Extension capture is not enabled yet.",
+      success: true,
       contractVersion: "v1",
-      acceptedShape: {
-        source: "browser-extension",
-        vendorDomain: "string",
-        pageUrl: "string",
-        capturedAt: "ISO datetime string",
-        selectedItems: "optional item array",
+      capture: {
+        id: created.id,
+        vendorDomain: created.vendorDomain,
+        pageUrl: created.pageUrl,
+        capturedAt: created.capturedAt.toISOString(),
+        createdAt: created.createdAt.toISOString(),
       },
     },
-    { status: 501 },
+    { status: 201 },
   );
 }

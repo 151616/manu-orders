@@ -111,18 +111,30 @@ export async function recordAuthAttempt({
   success: boolean;
 }) {
   const startedAt = Date.now();
-  void withTimeout(
-    prisma.loginAttempt.create({
+  try {
+    const writePromise = prisma.loginAttempt.create({
       data: {
         scope,
         email: key,
         ipAddress,
         success,
       },
-    }),
-    RATE_LIMIT_QUERY_TIMEOUT_MS,
-    "Rate-limit write timed out.",
-  ).catch((error) => {
+    });
+
+    void withTimeout(
+      writePromise,
+      RATE_LIMIT_QUERY_TIMEOUT_MS,
+      "Rate-limit write timed out.",
+    ).catch((error) => {
+      logRateLimitDebug("write-failed-skip", {
+        scope,
+        ipAddress,
+        success,
+        elapsedMs: Date.now() - startedAt,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  } catch (error) {
     logRateLimitDebug("write-failed-skip", {
       scope,
       ipAddress,
@@ -130,7 +142,7 @@ export async function recordAuthAttempt({
       elapsedMs: Date.now() - startedAt,
       error: error instanceof Error ? error.message : String(error),
     });
-  });
+  }
 }
 
 export async function isLoginRateLimited({
