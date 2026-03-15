@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createManuRequest, finishManuRequest } from "./actions";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
@@ -15,11 +16,11 @@ const TYPE_LABELS: Record<ManuRequestType, string> = {
 };
 
 const TYPE_COLORS: Record<ManuRequestType, string> = {
-  CNC: "bg-blue-100 text-blue-800",
-  DRILL: "bg-orange-100 text-orange-800",
-  TAP: "bg-purple-100 text-purple-800",
-  CUT: "bg-red-100 text-red-800",
-  OTHER: "bg-slate-100 text-slate-700",
+  CNC: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  DRILL: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  TAP: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  CUT: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  OTHER: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-300",
 };
 
 export type ManuRequestItem = {
@@ -59,35 +60,35 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
       ref={formRef}
       action={formAction}
       encType="multipart/form-data"
-      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4"
+      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 dark:border-white/10 dark:bg-slate-900"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-black">New Request</h2>
+        <h2 className="text-base font-semibold text-black dark:text-white">New Request</h2>
         <button
           type="button"
           onClick={onClose}
-          className="text-sm text-black/50 hover:text-black"
+          className="text-sm text-black/50 hover:text-black dark:text-white/50 dark:hover:text-white"
         >
           Cancel
         </button>
       </div>
 
       {state.error ? (
-        <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:border-red-500/30 dark:text-red-300">
           {state.error}
         </p>
       ) : null}
 
       <div className="space-y-3">
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-black">
+          <span className="mb-1 block text-sm font-medium text-black dark:text-white">
             Title <span className="text-red-500">*</span>
           </span>
           <input
             name="title"
             defaultValue={state.submittedValues.title ?? ""}
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.title ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
@@ -95,7 +96,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-black">
+          <span className="mb-1 block text-sm font-medium text-black dark:text-white">
             Description
           </span>
           <textarea
@@ -103,12 +104,12 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
             defaultValue={state.submittedValues.description ?? ""}
             rows={3}
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 resize-none"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 resize-none dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-black">
+          <span className="mb-1 block text-sm font-medium text-black dark:text-white">
             Type <span className="text-red-500">*</span>
           </span>
           <select
@@ -116,7 +117,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value as ManuRequestType)}
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60"
+            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-slate-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
           >
             <option value="CNC">CNC</option>
             <option value="DRILL">Drill</option>
@@ -131,7 +132,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
 
         {selectedType === "OTHER" ? (
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-black">
+            <span className="mb-1 block text-sm font-medium text-black dark:text-white">
               Describe the type <span className="text-red-500">*</span>
             </span>
             <input
@@ -139,7 +140,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
               defaultValue={state.submittedValues.otherType ?? ""}
               disabled={isPending}
               placeholder="e.g. Weld, Sand, Polish..."
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60"
+              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {state.fieldErrors.otherType ? (
               <p className="mt-1 text-xs text-red-600">
@@ -150,15 +151,15 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
         ) : null}
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-black">
+          <span className="mb-1 block text-sm font-medium text-black dark:text-white">
             CNC File{" "}
-            <span className="font-normal text-black/50">(optional)</span>
+            <span className="font-normal text-black/50 dark:text-white/50">(optional)</span>
           </span>
           <input
             name="cncFile"
             type="file"
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-black hover:file:bg-slate-200 disabled:opacity-60"
+            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-black hover:file:bg-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:file:bg-white/10 dark:file:text-white dark:hover:file:bg-white/20"
           />
         </label>
       </div>
@@ -168,14 +169,14 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onClose}
           disabled={isPending}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-black/70 hover:bg-slate-50 disabled:opacity-60"
+          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-black/70 hover:bg-slate-50 disabled:opacity-60 dark:border-white/20 dark:text-white/70 dark:hover:bg-white/10"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/85 disabled:opacity-60"
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
         >
           {isPending ? "Adding..." : "Add Request"}
         </button>
@@ -206,7 +207,7 @@ function RequestCard({
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3 dark:border-white/10 dark:bg-white/5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -214,7 +215,7 @@ function RequestCard({
           >
             {typeLabel}
           </span>
-          <h3 className="text-sm font-semibold text-black">{request.title}</h3>
+          <h3 className="text-sm font-semibold text-black dark:text-white">{request.title}</h3>
         </div>
         {isAdmin ? (
           <button
@@ -229,7 +230,7 @@ function RequestCard({
       </div>
 
       {request.description ? (
-        <p className="text-sm text-black/70 leading-relaxed">
+        <p className="text-sm text-black/70 leading-relaxed dark:text-white/70">
           {request.description}
         </p>
       ) : null}
@@ -239,7 +240,7 @@ function RequestCard({
           href={request.fileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 self-start rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-black/80 hover:bg-slate-100"
+          className="inline-flex items-center gap-1.5 self-start rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-black/80 hover:bg-slate-100 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -254,7 +255,7 @@ function RequestCard({
         </a>
       ) : null}
 
-      <p className="text-xs text-black/40">
+      <p className="text-xs text-black/40 dark:text-white/40">
         {new Date(request.createdAt).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -272,10 +273,10 @@ export function TrackingClient({ isAdmin, requests }: TrackingClientProps) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-black">
+          <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white">
             Manu Tracking
           </h1>
-          <p className="text-sm text-black/55 mt-0.5">
+          <p className="text-sm text-black/55 mt-0.5 dark:text-white/55">
             {requests.length === 0
               ? "No active requests."
               : `${requests.length} active request${requests.length === 1 ? "" : "s"}`}
@@ -285,10 +286,17 @@ export function TrackingClient({ isAdmin, requests }: TrackingClientProps) {
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="rounded-full border border-black bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/85"
+            className="rounded-full border border-indigo-600 bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
           >
             + Add New Request
           </button>
+        ) : !isAdmin ? (
+          <Link
+            href="/requests?open=tracking"
+            className="rounded-full border border-indigo-600 bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            + Request Tracking
+          </Link>
         ) : null}
       </div>
 
@@ -297,13 +305,13 @@ export function TrackingClient({ isAdmin, requests }: TrackingClientProps) {
       ) : null}
 
       {requests.length === 0 && !showForm ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-          <p className="text-sm text-black/50">No active requests right now.</p>
+        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center dark:border-white/10 dark:bg-white/5">
+          <p className="text-sm text-black/50 dark:text-white/50">No active requests right now.</p>
           {isAdmin ? (
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="mt-3 text-sm font-medium text-black underline underline-offset-2 hover:no-underline"
+              className="mt-3 text-sm font-medium text-black underline underline-offset-2 hover:no-underline dark:text-white"
             >
               Add the first one
             </button>

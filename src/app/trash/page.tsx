@@ -63,16 +63,16 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
       {toast ? <ToastBanner tone={toastTone} message={toast} /> : null}
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-black">Trash</h1>
-        <p className="text-sm text-black/65">
+        <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white">Trash</h1>
+        <p className="text-sm text-black/65 dark:text-white/65">
           Deleted orders and bookmarks can be restored or permanently removed.
         </p>
       </header>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
-        <h2 className="text-lg font-semibold text-black">Orders</h2>
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+        <h2 className="text-lg font-semibold text-black dark:text-white">Orders</h2>
         {deletedOrders.length === 0 ? (
-          <p className="text-sm text-black/70">No deleted orders.</p>
+          <p className="text-sm text-black/70 dark:text-white/70">No deleted orders.</p>
         ) : (
           <ul className="space-y-2">
             {deletedOrders.map((order) => {
@@ -90,11 +90,11 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
               return (
                 <li
                   key={order.id}
-                  className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
                 >
                   <div>
-                    <p className="text-sm font-medium text-black">{order.title}</p>
-                    <p className="text-xs text-black/60">
+                    <p className="text-sm font-medium text-black dark:text-white">{order.title}</p>
+                    <p className="text-xs text-black/60 dark:text-white/60">
                       Deleted on {order.updatedAt.toLocaleDateString()}
                     </p>
                   </div>
@@ -102,7 +102,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
                     <form action={restoreAction}>
                       <button
                         type="submit"
-                        className="w-full rounded-lg border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
+                        className="w-full rounded-lg border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                       >
                         Restore
                       </button>
@@ -110,7 +110,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
                     <form action={permanentDeleteAction}>
                       <button
                         type="submit"
-                        className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto"
+                        className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
                       >
                         Permanently Delete
                       </button>
@@ -123,10 +123,10 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
         )}
       </div>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
-        <h2 className="text-lg font-semibold text-black">Bookmarks</h2>
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+        <h2 className="text-lg font-semibold text-black dark:text-white">Bookmarks</h2>
         {deletedBookmarks.length === 0 ? (
-          <p className="text-sm text-black/70">No deleted bookmarks.</p>
+          <p className="text-sm text-black/70 dark:text-white/70">No deleted bookmarks.</p>
         ) : (
           <ul className="space-y-2">
             {deletedBookmarks.map((bookmark) => {
@@ -144,19 +144,19 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
               return (
                 <li
                   key={bookmark.id}
-                  className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
                 >
                   <div>
-                    <p className="text-sm font-medium text-black">
+                    <p className="text-sm font-medium text-black dark:text-white">
                       {bookmark.name}{" "}
-                      <span className="text-xs font-normal text-black/55">
+                      <span className="text-xs font-normal text-black/55 dark:text-white/55">
                         ({BOOKMARK_KIND_LABELS[bookmark.kind]})
                       </span>
                     </p>
                     {bookmark.kind === "SITE" && bookmark.siteUrl ? (
                       <p className="truncate text-xs text-black/60">{bookmark.siteUrl}</p>
                     ) : null}
-                    <p className="text-xs text-black/60">
+                    <p className="text-xs text-black/60 dark:text-white/60">
                       Deleted on {bookmark.updatedAt.toLocaleDateString()}
                     </p>
                   </div>
@@ -164,7 +164,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
                     <form action={restoreAction}>
                       <button
                         type="submit"
-                        className="w-full rounded-lg border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
+                        className="w-full rounded-lg border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                       >
                         Restore
                       </button>
@@ -172,7 +172,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
                     <form action={permanentDeleteAction}>
                       <button
                         type="submit"
-                        className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto"
+                        className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
                       >
                         Permanently Delete
                       </button>

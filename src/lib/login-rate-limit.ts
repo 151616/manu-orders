@@ -7,7 +7,6 @@ const RATE_LIMIT_QUERY_TIMEOUT_MS = 2000;
 
 export const AUTH_ATTEMPT_SCOPES = [
   "login",
-  "elevate",
   "vendor_capture",
 ] as const;
 export type AuthAttemptScope = (typeof AUTH_ATTEMPT_SCOPES)[number];

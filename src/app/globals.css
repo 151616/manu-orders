@@ -1,10 +1,20 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f4f7fb;
   --foreground: #0f172a;
   --surface: #ffffff;
   --surface-border: rgba(15, 23, 42, 0.1);
+}
+
+html.dark {
+  --background: #0f1117;
+  --foreground: #e2e8f0;
+  --surface: #1a1f2e;
+  --surface-border: rgba(226, 232, 240, 0.1);
 }
 
 @theme inline {
@@ -14,15 +24,6 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #f4f7fb;
-    --foreground: #0f172a;
-    --surface: #ffffff;
-    --surface-border: rgba(15, 23, 42, 0.1);
-  }
-}
-
 body {
   background:
     radial-gradient(1200px 600px at 15% -10%, rgba(14, 116, 144, 0.12), transparent 60%),
@@ -30,6 +31,13 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
+}
+
+html.dark body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(14, 116, 144, 0.06), transparent 60%),
+    radial-gradient(1000px 500px at 90% -20%, rgba(37, 99, 235, 0.04), transparent 55%),
+    var(--background);
 }
 
 * {
@@ -46,6 +54,14 @@ html {
   textarea {
     font-size: 16px;
   }
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 body[data-monitor-mode="1"] > header {

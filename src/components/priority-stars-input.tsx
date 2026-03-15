@@ -16,7 +16,7 @@ export function PriorityStarsInput({ name, defaultValue }: PriorityStarsInputPro
   return (
     <div className="space-y-1">
       <input type="hidden" name={name} value={value} />
-      <div className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-slate-50 px-2 py-1.5">
+      <div className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-slate-50 px-2 py-1.5 dark:border-white/10 dark:bg-white/5">
         {Array.from({ length: 5 }, (_, index) => {
           const current = index + 1;
           const isFilled = current <= value;
@@ -28,7 +28,7 @@ export function PriorityStarsInput({ name, defaultValue }: PriorityStarsInputPro
               className={
                 isFilled
                   ? "rounded-md px-1 py-0.5 text-2xl leading-none text-amber-500 transition hover:scale-110"
-                  : "rounded-md px-1 py-0.5 text-2xl leading-none text-slate-300 transition hover:scale-110 hover:text-amber-400"
+                  : "rounded-md px-1 py-0.5 text-2xl leading-none text-slate-300 transition hover:scale-110 hover:text-amber-400 dark:text-white/25"
               }
               aria-label={`Set priority to ${current}`}
             >

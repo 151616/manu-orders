@@ -35,15 +35,15 @@ function TemplateBookmarkCard({
   const [state, formAction] = useActionState(updateAction, EMPTY_FORM_STATE);
 
   return (
-    <article className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
+    <article className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-semibold tracking-tight text-black">{bookmark.name}</h3>
-          <p className="text-xs text-black/55">Template bookmark</p>
+          <h3 className="text-base font-semibold tracking-tight text-black dark:text-white">{bookmark.name}</h3>
+          <p className="text-xs text-black/55 dark:text-white/55">Template bookmark</p>
         </div>
         <Link
           href={`/orders/new?fromBookmark=${bookmark.id}`}
-          className="w-full rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 sm:w-auto"
+          className="w-full rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:text-white dark:hover:bg-white/10"
         >
           Create Order
         </Link>
@@ -55,11 +55,11 @@ function TemplateBookmarkCard({
         <>
           <form action={formAction} className="grid gap-3 sm:grid-cols-2">
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-black/70">Name</span>
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">Name</span>
               <input
                 name="name"
                 defaultValue={valueFor(state.submittedValues, "name", bookmark.name)}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {state.fieldErrors.name ? (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.name}</p>
@@ -67,7 +67,7 @@ function TemplateBookmarkCard({
             </label>
 
             <label>
-              <span className="mb-1 block text-xs font-medium text-black/70">
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
                 Default Vendor
               </span>
               <input
@@ -77,7 +77,7 @@ function TemplateBookmarkCard({
                   "defaultVendor",
                   bookmark.defaultVendor ?? "",
                 )}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {state.fieldErrors.defaultVendor ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -87,7 +87,7 @@ function TemplateBookmarkCard({
             </label>
 
             <label>
-              <span className="mb-1 block text-xs font-medium text-black/70">
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
                 Default Category
               </span>
               <select
@@ -97,7 +97,7 @@ function TemplateBookmarkCard({
                   "defaultCategory",
                   bookmark.defaultCategory ?? "",
                 )}
-                className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-slate-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
               >
                 <option value="">None</option>
                 {ORDER_CATEGORIES.map((category) => (
@@ -114,7 +114,7 @@ function TemplateBookmarkCard({
             </label>
 
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-black/70">
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
                 Default Order URL
               </span>
               <input
@@ -124,7 +124,7 @@ function TemplateBookmarkCard({
                   "defaultOrderUrl",
                   bookmark.defaultOrderUrl ?? "",
                 )}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {state.fieldErrors.defaultOrderUrl ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -134,7 +134,7 @@ function TemplateBookmarkCard({
             </label>
 
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-black/70">
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
                 Default Description
               </span>
               <textarea
@@ -145,7 +145,7 @@ function TemplateBookmarkCard({
                   "defaultDescription",
                   bookmark.defaultDescription ?? "",
                 )}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {state.fieldErrors.defaultDescription ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -163,12 +163,12 @@ function TemplateBookmarkCard({
             <SubmitButton
               idleLabel="Move to Trash"
               pendingLabel="Moving..."
-              className="w-full rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="w-full rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
             />
           </form>
         </>
       ) : (
-        <div className="space-y-2 text-sm text-black/75">
+        <div className="space-y-2 text-sm text-black/75 dark:text-white/75">
           <p>Vendor: {bookmark.defaultVendor ?? "N/A"}</p>
           <p>Category: {bookmark.defaultCategory ?? "N/A"}</p>
           <p>Order URL: {bookmark.defaultOrderUrl ?? "N/A"}</p>
@@ -188,16 +188,16 @@ function SiteBookmarkCard({
   const [state, formAction] = useActionState(updateAction, EMPTY_FORM_STATE);
 
   return (
-    <article className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
+    <article className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-semibold tracking-tight text-black">{bookmark.name}</h3>
-          <p className="text-xs text-black/55">Website bookmark</p>
+          <h3 className="text-base font-semibold tracking-tight text-black dark:text-white">{bookmark.name}</h3>
+          <p className="text-xs text-black/55 dark:text-white/55">Website bookmark</p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <Link
             href={`/orders/new?siteBookmarkId=${bookmark.id}`}
-            className="rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5"
+            className="rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
           >
             Use in New Order
           </Link>
@@ -206,7 +206,7 @@ function SiteBookmarkCard({
               href={bookmark.siteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-center text-xs font-semibold text-black/80 hover:bg-slate-100"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-center text-xs font-semibold text-black/80 hover:bg-slate-100 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
             >
               Open Site
             </a>
@@ -220,7 +220,7 @@ function SiteBookmarkCard({
         <>
           <form action={formAction} className="grid gap-3 sm:grid-cols-2">
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-black/70">
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
                 Website URL
               </span>
               <input
@@ -230,7 +230,7 @@ function SiteBookmarkCard({
                   "siteUrl",
                   bookmark.siteUrl ?? "",
                 )}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {state.fieldErrors.siteUrl ? (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.siteUrl}</p>
@@ -238,11 +238,11 @@ function SiteBookmarkCard({
             </label>
 
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-black/70">Name</span>
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">Name</span>
               <input
                 name="name"
                 defaultValue={valueFor(state.submittedValues, "name", bookmark.name)}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {state.fieldErrors.name ? (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.name}</p>
@@ -250,7 +250,7 @@ function SiteBookmarkCard({
             </label>
 
             <label className="sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-black/70">
+              <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
                 Vendor Hint
               </span>
               <input
@@ -260,7 +260,7 @@ function SiteBookmarkCard({
                   "siteVendorHint",
                   bookmark.siteVendorHint ?? "",
                 )}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {state.fieldErrors.siteVendorHint ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -278,12 +278,12 @@ function SiteBookmarkCard({
             <SubmitButton
               idleLabel="Move to Trash"
               pendingLabel="Moving..."
-              className="w-full rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="w-full rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
             />
           </form>
         </>
       ) : (
-        <div className="space-y-2 text-sm text-black/75">
+        <div className="space-y-2 text-sm text-black/75 dark:text-white/75">
           <p>Vendor Hint: {bookmark.siteVendorHint ?? "N/A"}</p>
           <p>Website URL: {bookmark.siteUrl ?? "N/A"}</p>
         </div>

@@ -20,15 +20,15 @@ export function OrderAttachmentUploadForm({
     <form
       action={formAction}
       encType="multipart/form-data"
-      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/80 p-3"
+      className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5"
     >
       <label className="block space-y-1">
-        <span className="text-sm font-medium text-black">Upload Attachment</span>
+        <span className="text-sm font-medium text-black dark:text-white">Upload Attachment</span>
         <input
           type="file"
           name="attachment"
           required
-          className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black"
+          className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black dark:border-white/20 dark:bg-white/5 dark:text-white"
         />
       </label>
 

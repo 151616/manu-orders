@@ -170,36 +170,36 @@ export function LoginForm() {
           setIsPending(false);
         }
       }}
-      className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+      className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-white/10 dark:bg-slate-900"
     >
       {isVerifiedLoading ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 px-6">
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-lg">
-            <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-black" />
-            <p className="mt-4 text-base font-semibold text-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 px-6 dark:bg-slate-900/95">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-lg dark:border-white/10 dark:bg-slate-800">
+            <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-black dark:border-white/20 dark:border-t-white" />
+            <p className="mt-4 text-base font-semibold text-black dark:text-white">
               Verification accepted
             </p>
-            <p className="mt-1 text-sm text-black/65">
+            <p className="mt-1 text-sm text-black/65 dark:text-white/65">
               Loading your workspace...
             </p>
           </div>
         </div>
       ) : null}
 
-      <h2 className="text-2xl font-bold tracking-tight text-black">Login</h2>
-      <p className="text-sm text-black/65">
+      <h2 className="text-2xl font-bold tracking-tight text-black dark:text-white">Login</h2>
+      <p className="text-sm text-black/65 dark:text-white/65">
         Choose a role and enter the matching role code.
       </p>
 
       <label className="block space-y-1">
-        <span className="text-sm font-medium text-black">Role</span>
+        <span className="text-sm font-medium text-black dark:text-white">Role</span>
         <select
           name="role"
           value={selectedRole}
           onChange={(event) =>
             setSelectedRole(event.target.value as "VIEWER" | "ADMIN")
           }
-          className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-slate-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
         >
           <option value="VIEWER">VIEWER</option>
           <option value="ADMIN">ADMIN</option>
@@ -207,7 +207,7 @@ export function LoginForm() {
       </label>
 
       <label className="block space-y-1">
-        <span className="text-sm font-medium text-black">
+        <span className="text-sm font-medium text-black dark:text-white">
           {selectedRole === "VIEWER" ? "Viewer Code" : "Admin Code"}
         </span>
         <input
@@ -216,7 +216,7 @@ export function LoginForm() {
           name="roleCode"
           autoComplete="off"
           required
-          className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           placeholder={
             selectedRole === "VIEWER"
               ? "Enter viewer code"
@@ -226,7 +226,7 @@ export function LoginForm() {
       </label>
 
       {errorMessage ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-900/20 dark:text-red-300">
           {errorMessage}
         </p>
       ) : null}
@@ -234,7 +234,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isPending || isVerifiedLoading}
-        className="w-full rounded-md bg-black px-3 py-2.5 text-sm font-semibold text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-md bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isVerifiedLoading
           ? "Loading workspace..."

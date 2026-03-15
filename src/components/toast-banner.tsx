@@ -10,8 +10,8 @@ type ToastBannerProps = {
 };
 
 const toastToneClass: Record<ToastTone, string> = {
-  success: "border-emerald-300 bg-emerald-50/95 text-emerald-900",
-  debug: "border-sky-300 bg-sky-50/95 text-sky-900",
+  success: "border-emerald-300 bg-emerald-50/95 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+  debug: "border-sky-300 bg-sky-50/95 text-sky-900 dark:border-sky-500/40 dark:bg-sky-900/30 dark:text-sky-200",
 };
 
 export function ToastBanner({ tone, message }: ToastBannerProps) {

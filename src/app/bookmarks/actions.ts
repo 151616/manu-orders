@@ -531,7 +531,12 @@ export async function createTemplateBookmark(
 
   revalidatePath("/bookmarks");
   revalidatePath("/orders/new");
-  redirect("/bookmarks?saved=bookmark-created");
+  return {
+    success: "Template bookmark created.",
+    error: null,
+    fieldErrors: {},
+    submittedValues: {},
+  };
 }
 
 export async function createSiteBookmark(
@@ -638,7 +643,12 @@ export async function createSiteBookmark(
 
   revalidatePath("/bookmarks");
   revalidatePath("/orders/new");
-  redirect("/bookmarks?saved=bookmark-created");
+  return {
+    success: "Website bookmark added to your navigation.",
+    error: null,
+    fieldErrors: {},
+    submittedValues: {},
+  };
 }
 
 export async function updateTemplateBookmark(

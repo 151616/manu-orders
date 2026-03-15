@@ -5,6 +5,7 @@ import {
   restoreOrderFromTrash,
 } from "@/app/orders/actions";
 import { QueueRuntime } from "@/app/queue/queue-runtime";
+import { QueueFiltersDropdown } from "@/app/queue/queue-filters-dropdown";
 import { PriorityStarsDisplay } from "@/components/priority-stars-display";
 import { StatusBadge } from "@/components/status-badge";
 import { ToastBanner } from "@/components/toast-banner";
@@ -12,10 +13,9 @@ import { requireAuth } from "@/lib/auth";
 import {
   ORDER_CATEGORIES,
   ORDER_CATEGORY_LABELS,
-  ORDER_STATUS_LABELS,
-  ORDER_STATUSES,
   type OrderCategory,
   type OrderStatus,
+  ORDER_STATUSES,
 } from "@/lib/order-domain";
 import { getEtaDeltaDays, getRemainingEtaDays } from "@/lib/eta";
 
@@ -24,11 +24,10 @@ type QueuePageProps = {
     search?: string | string[];
     status?: string | string[];
     category?: string | string[];
-    monitor?: string | string[];
-    filters?: string | string[];
     toast?: string | string[];
     tone?: string | string[];
     undoOrderId?: string | string[];
+    view?: string | string[];
   }>;
 };
 
@@ -38,15 +37,11 @@ function first(value: string | string[] | undefined) {
 
 function buildQueueHref(params: Record<string, string | undefined>) {
   const query = new URLSearchParams();
-
   Object.entries(params).forEach(([key, value]) => {
-    if (value && value.trim().length > 0) {
-      query.set(key, value);
-    }
+    if (value && value.trim().length > 0) query.set(key, value);
   });
-
-  const queryString = query.toString();
-  return queryString ? `/queue?${queryString}` : "/queue";
+  const qs = query.toString();
+  return qs ? `/queue?${qs}` : "/queue";
 }
 
 function toastMessage(code: string | undefined) {
@@ -57,8 +52,6 @@ function toastMessage(code: string | undefined) {
       return "Order restored from trash.";
     case "order-permanently-deleted":
       return "Order permanently deleted.";
-    case "elevated":
-      return "Session elevated to ADMIN.";
     case "order-not-found":
       return "Debug: Order no longer exists.";
     case "already-removed":
@@ -79,16 +72,14 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   const search = first(params.search)?.trim() ?? "";
   const statusRaw = first(params.status) ?? "ALL";
   const categoryRaw = first(params.category) ?? "ALL";
-  const isMonitor = first(params.monitor) === "1";
-  const showFilters = !isMonitor || first(params.filters) === "1";
+  const isCompact = first(params.view) === "compact";
   const toastCode = first(params.toast);
   const toastTone = first(params.tone) === "debug" ? "debug" : "success";
   const undoOrderId = first(params.undoOrderId)?.trim() ?? "";
   const toast = toastMessage(toastCode);
-  const canRemoveFromList = user.role === "ADMIN" && !isMonitor;
+  const canRemoveFromList = user.role === "ADMIN";
   const showUndo =
     user.role === "ADMIN" &&
-    !isMonitor &&
     toastCode === "order-removed" &&
     undoOrderId.length > 0;
   const undoRemoveAction = showUndo
@@ -104,30 +95,20 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
       ? (categoryRaw as OrderCategory)
       : "ALL";
 
-  const baseQuery = {
-    search: search || undefined,
-    status: status === "ALL" ? undefined : status,
-    category: category === "ALL" ? undefined : category,
-  };
-
-  const orders = await listOrders({
-    search,
-    status,
-    category,
-  });
+  const orders = await listOrders({ search, status, category });
 
   return (
-    <section className={isMonitor ? "space-y-4" : "space-y-5 sm:space-y-6"}>
+    <section className="space-y-5 sm:space-y-6">
       {toast ? <ToastBanner tone={toastTone} message={toast} /> : null}
       {showUndo && undoRemoveAction ? (
         <form
           action={undoRemoveAction}
-          className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-500/30 dark:bg-amber-900/20 dark:text-amber-200"
         >
           <p>Order moved to trash. Undo?</p>
           <button
             type="submit"
-            className="w-full rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 sm:w-auto"
+            className="w-full rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 sm:w-auto dark:border-amber-500/40 dark:bg-transparent dark:text-amber-200 dark:hover:bg-amber-900/30"
           >
             Restore
           </button>
@@ -136,151 +117,55 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1
-            className={
-              isMonitor
-                ? "text-3xl font-bold tracking-tight text-black"
-                : "text-2xl font-bold tracking-tight text-black"
-            }
-          >
+          <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white">
             Queue
           </h1>
-          <p className={isMonitor ? "text-base text-black/65" : "text-sm text-black/65"}>
+          <p className="text-sm text-black/65 dark:text-white/65">
             Auto-refresh every 15 seconds.
           </p>
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           {user.role === "ADMIN" ? (
             <a
               href="/orders/export.csv"
-              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
+              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
             >
               Export Orders CSV
             </a>
-          ) : null}
-
-          {isMonitor ? (
-            <Link
-              href={buildQueueHref(baseQuery)}
-              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
-            >
-              Exit Monitor
-            </Link>
           ) : (
             <Link
-              href={buildQueueHref({ ...baseQuery, monitor: "1" })}
-              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
+              href="/requests?open=order"
+              className="w-full rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto"
             >
-              Monitor Mode
+              + Request a Part
             </Link>
           )}
 
-          {isMonitor ? (
-            <Link
-              href={buildQueueHref({
-                ...baseQuery,
-                monitor: "1",
-                filters: showFilters ? undefined : "1",
-              })}
-              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
-            >
-              {showFilters ? "Hide Filters" : "Show Filters"}
-            </Link>
-          ) : null}
+          <Link
+            href={buildQueueHref({ view: isCompact ? undefined : "compact", search: search || undefined, status: status !== "ALL" ? status : undefined, category: category !== "ALL" ? category : undefined })}
+            className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+          >
+            {isCompact ? "Expanded View" : "Compact View"}
+          </Link>
 
-          <QueueRuntime monitor={isMonitor} />
+          <QueueRuntime monitor={false} />
         </div>
       </header>
 
-      {showFilters ? (
-        <form
-          className="grid gap-3 rounded-xl border border-slate-200/80 bg-white/95 p-4 shadow-sm sm:grid-cols-4"
-          action="/queue"
-        >
-          {isMonitor ? <input type="hidden" name="monitor" value="1" /> : null}
-          {isMonitor ? <input type="hidden" name="filters" value="1" /> : null}
-
-          <label className="sm:col-span-2">
-            <span className="mb-1 block text-xs font-medium text-black/70">
-              Search
-            </span>
-            <input
-              type="text"
-              name="search"
-              defaultValue={search}
-              placeholder="Title, order number, requester"
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-            />
-          </label>
-
-          <label>
-            <span className="mb-1 block text-xs font-medium text-black/70">
-              Status
-            </span>
-            <select
-              name="status"
-              defaultValue={status}
-              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-            >
-              <option value="ALL">All</option>
-              {ORDER_STATUSES.map((item) => (
-                <option key={item} value={item}>
-                  {ORDER_STATUS_LABELS[item]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span className="mb-1 block text-xs font-medium text-black/70">
-              Category
-            </span>
-            <select
-              name="category"
-              defaultValue={category}
-              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-            >
-              <option value="ALL">All</option>
-              {ORDER_CATEGORIES.map((item) => (
-                <option key={item} value={item}>
-                  {ORDER_CATEGORY_LABELS[item]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="sm:col-span-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-black/90 sm:w-auto"
-            >
-              Apply
-            </button>
-            <Link
-              href={buildQueueHref(
-                isMonitor ? { monitor: "1", filters: "1" } : {},
-              )}
-              className="w-full rounded-lg border border-black/20 px-4 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto"
-            >
-              Reset
-            </Link>
-          </div>
-        </form>
-      ) : null}
+      <QueueFiltersDropdown
+        search={search}
+        status={statusRaw}
+        category={categoryRaw}
+        isCompact={isCompact}
+      />
 
       {orders.length === 0 ? (
-        <p className="rounded-xl border border-slate-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm">
+        <p className="rounded-xl border border-slate-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/70">
           No orders found.
         </p>
       ) : (
-        <div
-          className={
-            isMonitor
-              ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-              : "grid gap-3 sm:grid-cols-2"
-          }
-        >
+        <div className="grid gap-3 sm:grid-cols-2">
           {orders.map((order) => {
             const etaRemaining = getRemainingEtaDays(order);
             const etaDelta = getEtaDeltaDays(order);
@@ -295,90 +180,84 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                 key={order.id}
                 className={
                   isOverdue
-                    ? isMonitor
-                      ? "space-y-4 rounded-xl border border-red-200 bg-red-50 p-5 transition hover:border-red-300 hover:shadow-sm"
-                      : "space-y-3 rounded-xl border border-red-200 bg-red-50/95 p-4 shadow-sm transition hover:border-red-300 hover:shadow-md"
+                    ? "space-y-3 rounded-xl border border-red-200 bg-red-50/95 p-4 shadow-sm transition hover:border-red-300 hover:shadow-md dark:border-red-500/30 dark:bg-red-900/20 dark:hover:border-red-500/50"
                     : isDueSoon
-                      ? isMonitor
-                        ? "space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm transition hover:border-amber-300 hover:shadow-md"
-                        : "space-y-3 rounded-xl border border-amber-200 bg-amber-50/95 p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md"
-                      : isMonitor
-                        ? "space-y-4 rounded-xl border border-slate-200 bg-white/95 p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
-                        : "space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                      ? "space-y-3 rounded-xl border border-amber-200 bg-amber-50/95 p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-amber-500/30 dark:bg-amber-900/20 dark:hover:border-amber-500/50"
+                      : "space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
                 }
               >
                 <Link href={`/orders/${order.id}`} className="block space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h2
-                      className={
-                        isMonitor
-                        ? "text-xl font-semibold text-black"
-                          : "text-base font-semibold leading-snug text-black"
-                      }
-                    >
+                    <h2 className="text-base font-semibold leading-snug text-black dark:text-white">
                       {order.title}
                     </h2>
-                    <StatusBadge status={order.status} />
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {isCompact && isOverdue ? (
+                        <span className="text-xs font-semibold text-red-600 dark:text-red-400">OVERDUE</span>
+                      ) : isCompact && isDueSoon ? (
+                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">DUE SOON</span>
+                      ) : null}
+                      <StatusBadge status={order.status} />
+                    </div>
                   </div>
 
-                  <div
-                    className={
-                      isMonitor
-                        ? "grid grid-cols-2 gap-3 text-base text-black/85"
-                        : "grid grid-cols-1 gap-2 text-sm text-black/80 sm:grid-cols-2"
-                    }
-                  >
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-black/50">
-                        Priority
-                      </p>
-                      <PriorityStarsDisplay
-                        value={order.priority}
-                        className={isMonitor ? "text-lg text-amber-500" : undefined}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-black/50">
-                        ETA
-                      </p>
-                      {isOverdue ? (
-                        <p className="font-medium text-red-700">
-                          Overdue by {Math.abs(etaDelta)} day(s)
+                  {!isCompact ? (
+                    <div className="grid grid-cols-1 gap-2 text-sm text-black/80 sm:grid-cols-2 dark:text-white/80">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-black/50 dark:text-white/50">
+                          Priority
                         </p>
-                      ) : isDueSoon ? (
-                        <p className="font-medium text-amber-900">
-                          Due in {etaRemaining} day(s)
+                        <PriorityStarsDisplay value={order.priority} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-black/50 dark:text-white/50">
+                          ETA
                         </p>
-                      ) : (
-                        <p>{etaRemaining} day(s)</p>
-                      )}
+                        {isOverdue ? (
+                          <p className="font-medium text-red-700">
+                            Overdue by {Math.abs(etaDelta)} day(s)
+                          </p>
+                        ) : isDueSoon ? (
+                          <p className="font-medium text-amber-900">
+                            Due in {etaRemaining} day(s)
+                          </p>
+                        ) : (
+                          <p>{etaRemaining} day(s)</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-black/50 dark:text-white/50">
+                          Category
+                        </p>
+                        <p>
+                          {ORDER_CATEGORY_LABELS[order.category as OrderCategory] ??
+                            order.category}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-black/50 dark:text-white/50">
+                          Order Number
+                        </p>
+                        <p>{order.orderNumber ?? "N/A"}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-black/50">
-                        Category
-                      </p>
-                      <p>
-                        {ORDER_CATEGORY_LABELS[order.category as OrderCategory] ??
-                          order.category}
-                      </p>
+                  ) : (
+                    <div className="flex items-center gap-3 text-xs text-black/60 dark:text-white/60">
+                      <span>{ORDER_CATEGORY_LABELS[order.category as OrderCategory] ?? order.category}</span>
+                      <span>·</span>
+                      <PriorityStarsDisplay value={order.priority} />
                     </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-black/50">
-                        Order Number
-                      </p>
-                      <p>{order.orderNumber ?? "N/A"}</p>
-                    </div>
-                  </div>
+                  )}
                 </Link>
 
                 {canRemoveFromList ? (
                   <form
                     action={removeAction}
-                    className="border-t border-black/10 pt-3"
+                    className="border-t border-black/10 pt-3 dark:border-white/10"
                   >
                     <button
                       type="submit"
-                      className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto"
+                      className="w-full rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 sm:w-auto dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
                     >
                       Move to Trash
                     </button>

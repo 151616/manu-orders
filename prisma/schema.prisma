@@ -38,6 +38,12 @@ enum ManuRequestType {
   OTHER
 }
 
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Order {
   id               String        @id @default(uuid())
   createdAt        DateTime      @default(now())
@@ -135,6 +141,46 @@ model ManuRequest {
   createdByLabel   String
 
   @@index([isFinished, createdAt])
+}
+
+model OrderRequest {
+  id               String        @id @default(uuid())
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  status           RequestStatus @default(PENDING)
+  submittedByLabel String
+  reviewedAt       DateTime?
+  reviewedByLabel  String?
+  title            String
+  description      String?
+  requesterName    String
+  vendor           String?
+  orderNumber      String?
+  orderUrl         String?
+  quantity         Int?
+  category         OrderCategory
+  priority         Int           @default(3)
+  etaDays          Int           @default(10)
+
+  @@index([status, createdAt])
+  @@index([submittedByLabel, createdAt])
+}
+
+model TrackingRequest {
+  id               String          @id @default(uuid())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  status           RequestStatus   @default(PENDING)
+  submittedByLabel String
+  reviewedAt       DateTime?
+  reviewedByLabel  String?
+  title            String
+  description      String?
+  type             ManuRequestType
+  otherType        String?
+
+  @@index([status, createdAt])
+  @@index([submittedByLabel, createdAt])
 }
 
 model LoginAttempt {

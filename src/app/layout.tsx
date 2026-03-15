@@ -5,6 +5,7 @@ import "./globals.css";
 import { PageProgressBar } from "@/components/page-progress-bar";
 import { TopNav } from "@/components/top-nav";
 import { FirebaseAnalyticsBootstrap } from "@/components/firebase-analytics-bootstrap";
+import { ThemeProvider } from "@/components/theme-provider";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -48,6 +49,7 @@ export default async function RootLayout({
   const user = await getSession();
 
   let siteBookmarks: Array<{ id: string; name: string }> = [];
+  let pendingRequestCount = 0;
   if (user) {
     try {
       siteBookmarks = await getCachedSiteBookmarks(user.label);
@@ -55,19 +57,40 @@ export default async function RootLayout({
       console.error("[RootLayout] Failed to load site bookmarks.", error);
       siteBookmarks = [];
     }
+    if (user.role === "ADMIN") {
+      try {
+        const [orderCount, trackingCount] = await Promise.all([
+          prisma.orderRequest.count({ where: { status: "PENDING" } }),
+          prisma.trackingRequest.count({ where: { status: "PENDING" } }),
+        ]);
+        pendingRequestCount = orderCount + trackingCount;
+      } catch {
+        pendingRequestCount = 0;
+      }
+    }
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Prevent flash of wrong theme before React hydrates */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');})()`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
-        <FirebaseAnalyticsBootstrap />
-        <PageProgressBar />
-        {user ? <TopNav user={user} siteBookmarks={siteBookmarks} /> : null}
-        <main className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
-          {children}
-        </main>
+        <ThemeProvider>
+          <FirebaseAnalyticsBootstrap />
+          <PageProgressBar />
+          {user ? <TopNav user={user} siteBookmarks={siteBookmarks} pendingRequestCount={pendingRequestCount} /> : null}
+          <main className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
+            {children}
+          </main>
+        </ThemeProvider>
       </body>
     </html>
   );
