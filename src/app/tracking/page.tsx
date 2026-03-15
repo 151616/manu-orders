@@ -22,7 +22,7 @@ export default async function TrackingPage() {
       fileUrl: req.fileStoragePath
         ? await resolveTrackingFilePublicUrl(req.fileStoragePath)
         : null,
-      createdAt: req.createdAt,
+      createdAt: req.createdAt.toISOString(),
     })),
   );
 

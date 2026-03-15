@@ -30,7 +30,7 @@ export type ManuRequestItem = {
   otherType: string | null;
   fileOriginalName: string | null;
   fileUrl: string | null;
-  createdAt: Date;
+  createdAt: string;
 };
 
 type TrackingClientProps = {
@@ -255,7 +255,7 @@ function RequestCard({
       ) : null}
 
       <p className="text-xs text-black/40">
-        {new Date(request.createdAt).toLocaleDateString(undefined, {
+        {new Date(request.createdAt).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
           year: "numeric",

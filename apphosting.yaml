@@ -1,5 +1,6 @@
 runConfig:
-  minInstances: 0
+  runtime: nodejs22
+  minInstances: 1
   maxInstances: 2
   cpu: 1
   memoryMiB: 512

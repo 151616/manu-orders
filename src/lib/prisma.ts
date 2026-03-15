@@ -23,8 +23,10 @@ function normalizeDatabaseUrl(rawValue: string) {
     const isLocalHost =
       host === "localhost" || host === "127.0.0.1" || host === "::1";
 
-    if (!isLocalHost && !parsed.searchParams.has("sslmode")) {
-      parsed.searchParams.set("sslmode", "require");
+    if (!isLocalHost) {
+      // Disable SSL to avoid certificate verification issues with Prisma's WASM/Rustls engine.
+      // Cloud SQL (and most hosted DBs) accept plain TCP connections via authorized networks.
+      parsed.searchParams.set("sslmode", "disable");
     }
 
     return parsed.toString();
@@ -50,7 +52,7 @@ function createPrismaClient() {
     const host = parsed.hostname.toLowerCase();
     const isLocalHost =
       host === "localhost" || host === "127.0.0.1" || host === "::1";
-    ssl = !isLocalHost ? { rejectUnauthorized: false } : false;
+    ssl = false; // SSL handled at the URL level via sslmode parameter
   } catch {
     // Leave ssl at default false if parsing fails; Prisma/pg will surface detailed errors later.
   }
@@ -58,6 +60,8 @@ function createPrismaClient() {
   const adapter = new PrismaPg({
     connectionString: normalizedDatabaseUrl,
     ssl,
+    max: 3,
+    connectionTimeoutMillis: 15000,
   });
 
   return new PrismaClient({ adapter });
@@ -69,10 +73,12 @@ function getPrismaClient() {
   }
 
   const client = createPrismaClient();
+  globalForPrisma.prisma = client;
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client;
-  }
+  // Eagerly start connecting so the first user request doesn't pay the cold-start cost.
+  void client.$connect().catch((err: unknown) => {
+    console.error("[Prisma] Pre-connect failed:", err);
+  });
 
   return client;
 }

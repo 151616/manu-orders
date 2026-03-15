@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { unstable_cache } from "next/cache";
 import "./globals.css";
-import { PageTransitionOverlay } from "@/components/page-transition-overlay";
+import { PageProgressBar } from "@/components/page-progress-bar";
 import { TopNav } from "@/components/top-nav";
 import { FirebaseAnalyticsBootstrap } from "@/components/firebase-analytics-bootstrap";
 import { getSession } from "@/lib/auth";
@@ -22,6 +23,23 @@ export const metadata: Metadata = {
   description: "Manufacturing order queue management",
 };
 
+const getCachedSiteBookmarks = unstable_cache(
+  async (userLabel: string) =>
+    prisma.bookmark.findMany({
+      where: {
+        kind: "SITE",
+        createdByLabel: userLabel,
+        isDeleted: false,
+        siteUrl: { not: null },
+      },
+      select: { id: true, name: true },
+      orderBy: [{ createdAt: "desc" }],
+      take: 20,
+    }),
+  ["site-bookmarks"],
+  { revalidate: 30, tags: ["site-bookmarks"] },
+);
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -32,20 +50,7 @@ export default async function RootLayout({
   let siteBookmarks: Array<{ id: string; name: string }> = [];
   if (user) {
     try {
-      siteBookmarks = await prisma.bookmark.findMany({
-        where: {
-          kind: "SITE",
-          createdByLabel: user.label,
-          isDeleted: false,
-          siteUrl: { not: null },
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-        orderBy: [{ createdAt: "desc" }],
-        take: 20,
-      });
+      siteBookmarks = await getCachedSiteBookmarks(user.label);
     } catch (error) {
       console.error("[RootLayout] Failed to load site bookmarks.", error);
       siteBookmarks = [];
@@ -58,7 +63,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
         <FirebaseAnalyticsBootstrap />
-        <PageTransitionOverlay />
+        <PageProgressBar />
         {user ? <TopNav user={user} siteBookmarks={siteBookmarks} /> : null}
         <main className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
           {children}
