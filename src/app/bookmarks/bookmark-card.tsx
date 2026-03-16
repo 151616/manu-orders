@@ -25,7 +25,7 @@ const inputCls =
   "min-w-0 flex-1 rounded-md border border-slate-300/80 px-2.5 py-1.5 text-xs text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10";
 
 const saveBtnCls =
-  "shrink-0 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60";
+  "shrink-0 rounded-md border border-black/20 bg-white px-2.5 py-1.5 text-xs font-semibold text-black/80 hover:bg-black/5 hover:text-black disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/20 dark:bg-transparent dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white";
 
 const deleteBtnCls =
   "shrink-0 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-900/20";
@@ -39,7 +39,7 @@ function SiteBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
 
   return (
     <li className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/5">
-      <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
+      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-white/10 dark:text-white/60">
         Site
       </span>
       <span className="w-32 shrink-0 truncate text-sm font-medium text-black dark:text-white">
@@ -85,7 +85,7 @@ function SiteBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
             href={toExternalUrl(bookmark.siteUrl)}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-w-0 flex-1 truncate text-xs text-indigo-600 underline underline-offset-2 hover:text-indigo-800 dark:text-indigo-400"
+            className="min-w-0 flex-1 truncate text-xs text-black/60 underline underline-offset-2 hover:text-black dark:text-white/60 dark:hover:text-white"
           >
             {bookmark.siteUrl}
           </a>
@@ -106,7 +106,7 @@ function TemplateBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
 
   return (
     <li className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/5">
-      <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-white/10 dark:text-white/60">
         Tmpl
       </span>
       <span className="w-32 shrink-0 truncate text-sm font-medium text-black dark:text-white">
@@ -147,7 +147,7 @@ function TemplateBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
             href={toExternalUrl(bookmark.defaultOrderUrl)}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-w-0 flex-1 truncate text-xs text-indigo-600 underline underline-offset-2 hover:text-indigo-800 dark:text-indigo-400"
+            className="min-w-0 flex-1 truncate text-xs text-black/60 underline underline-offset-2 hover:text-black dark:text-white/60 dark:hover:text-white"
           >
             {bookmark.defaultOrderUrl}
           </a>
