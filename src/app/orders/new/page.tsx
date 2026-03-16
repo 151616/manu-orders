@@ -2,6 +2,7 @@ import { getBookmarkById, getSiteBookmarkById } from "@/app/bookmarks/actions";
 import { NewOrderForm } from "@/app/orders/new/new-order-form";
 import { FormMessage } from "@/components/form-message";
 import { requireAuth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 type NewOrderPageProps = {
   searchParams: Promise<{
@@ -17,6 +18,7 @@ function first(value: string | string[] | undefined) {
 
 export default async function NewOrderPage({ searchParams }: NewOrderPageProps) {
   const user = await requireAuth();
+  if (user.role !== "ADMIN") redirect("/requests?open=order");
   const params = await searchParams;
   const fromBookmarkId = first(params.fromBookmark)?.trim();
   const siteBookmarkId = first(params.siteBookmarkId)?.trim();

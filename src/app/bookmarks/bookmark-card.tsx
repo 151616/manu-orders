@@ -41,12 +41,14 @@ function TemplateBookmarkCard({
           <h3 className="text-base font-semibold tracking-tight text-black dark:text-white">{bookmark.name}</h3>
           <p className="text-xs text-black/55 dark:text-white/55">Template bookmark</p>
         </div>
-        <Link
-          href={`/orders/new?fromBookmark=${bookmark.id}`}
-          className="w-full rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:text-white dark:hover:bg-white/10"
-        >
-          Create Order
-        </Link>
+        {canMutate ? (
+          <Link
+            href={`/orders/new?fromBookmark=${bookmark.id}`}
+            className="w-full rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:text-white dark:hover:bg-white/10"
+          >
+            Create Order
+          </Link>
+        ) : null}
       </div>
 
       {state.error ? <FormMessage tone="error" message={state.error} /> : null}
@@ -195,12 +197,14 @@ function SiteBookmarkCard({
           <p className="text-xs text-black/55 dark:text-white/55">Website bookmark</p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <Link
-            href={`/orders/new?siteBookmarkId=${bookmark.id}`}
-            className="rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
-          >
-            Use in New Order
-          </Link>
+          {canMutate ? (
+            <Link
+              href={`/orders/new?siteBookmarkId=${bookmark.id}`}
+              className="rounded-lg border border-black/20 px-3 py-1.5 text-center text-xs font-semibold text-black hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
+            >
+              Use in New Order
+            </Link>
+          ) : null}
           {bookmark.siteUrl ? (
             <a
               href={bookmark.siteUrl}
