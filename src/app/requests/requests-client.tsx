@@ -564,11 +564,25 @@ function ViewerStatusToast({
         ? "text-red-900 dark:text-red-200"
         : "text-amber-900 dark:text-amber-200";
 
+  const barCls =
+    tone === "approved"
+      ? "bg-green-500 dark:bg-green-400"
+      : tone === "rejected"
+        ? "bg-red-500 dark:bg-red-400"
+        : "bg-amber-500 dark:bg-amber-400";
+
+  const trackCls =
+    tone === "approved"
+      ? "bg-green-100 dark:bg-green-900/40"
+      : tone === "rejected"
+        ? "bg-red-100 dark:bg-red-900/40"
+        : "bg-amber-100 dark:bg-amber-900/40";
+
   return (
     <div
-      className={`fixed right-3 top-3 z-50 max-w-xs rounded-xl border bg-white px-4 py-3 shadow-lg dark:bg-slate-900 ${borderCls}`}
+      className={`fixed right-3 top-3 z-50 max-w-xs overflow-hidden rounded-xl border bg-white shadow-lg dark:bg-slate-900 ${borderCls}`}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
         <p className={`text-sm font-medium ${textCls}`}>{text}</p>
         <button
           onClick={dismiss}
@@ -577,6 +591,12 @@ function ViewerStatusToast({
         >
           ×
         </button>
+      </div>
+      <div className={`h-0.5 ${trackCls}`}>
+        <div
+          className={`h-full origin-left ${barCls}`}
+          style={{ animation: "toast-drain 5s linear forwards" }}
+        />
       </div>
     </div>
   );

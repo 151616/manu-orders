@@ -34,7 +34,7 @@ const getCachedSiteBookmarks = unstable_cache(
         isDeleted: false,
         siteUrl: { not: null },
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, siteUrl: true },
       orderBy: [{ createdAt: "desc" }],
       take: 20,
     }),
@@ -49,7 +49,7 @@ export default async function RootLayout({
 }>) {
   const user = await getSession();
 
-  let siteBookmarks: Array<{ id: string; name: string }> = [];
+  let siteBookmarks: Array<{ id: string; name: string; siteUrl: string | null }> = [];
   let pendingRequestCount = 0;
   if (user) {
     try {

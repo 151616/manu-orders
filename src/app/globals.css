@@ -72,3 +72,8 @@ body[data-monitor-mode="1"] > main {
   max-width: 100%;
   padding: 0.75rem;
 }
+
+@keyframes toast-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

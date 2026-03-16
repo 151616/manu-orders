@@ -27,8 +27,8 @@ export function PendingRequestsToast({ pendingCount }: Props) {
   if (!message) return null;
 
   return (
-    <div className="fixed right-3 top-3 z-50 max-w-xs rounded-xl border border-indigo-200 bg-white px-4 py-3 shadow-lg dark:border-indigo-500/30 dark:bg-slate-900">
-      <div className="flex items-center justify-between gap-3">
+    <div className="fixed right-3 top-3 z-50 max-w-xs overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-lg dark:border-indigo-500/30 dark:bg-slate-900">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
         <Link
           href="/requests"
           className="text-sm font-medium text-indigo-900 hover:underline dark:text-indigo-200"
@@ -43,6 +43,12 @@ export function PendingRequestsToast({ pendingCount }: Props) {
         >
           ×
         </button>
+      </div>
+      <div className="h-0.5 bg-indigo-100 dark:bg-indigo-900/40">
+        <div
+          className="h-full origin-left bg-indigo-500 dark:bg-indigo-400"
+          style={{ animation: "toast-drain 5s linear forwards" }}
+        />
       </div>
     </div>
   );
