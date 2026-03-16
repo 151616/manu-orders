@@ -27,7 +27,7 @@ export function PendingRequestsToast({ pendingCount }: Props) {
   if (!message) return null;
 
   return (
-    <div className="fixed right-3 top-3 z-50 max-w-xs overflow-hidden rounded-xl border border-black/15 bg-white shadow-lg dark:border-white/15 dark:bg-slate-900">
+    <div className="fixed right-3 top-3 z-50 max-w-xs overflow-hidden rounded-xl border border-black/15 bg-white shadow-lg dark:border-white/15 dark:bg-zinc-900">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <Link
           href="/requests"

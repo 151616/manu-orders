@@ -170,11 +170,11 @@ export function LoginForm() {
           setIsPending(false);
         }
       }}
-      className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-white/10 dark:bg-slate-900"
+      className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-white/10 dark:bg-zinc-900"
     >
       {isVerifiedLoading ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 px-6 dark:bg-slate-900/95">
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-lg dark:border-white/10 dark:bg-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 px-6 dark:bg-zinc-900/95">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-lg dark:border-white/10 dark:bg-zinc-800">
             <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-black dark:border-white/20 dark:border-t-white" />
             <p className="mt-4 text-base font-semibold text-black dark:text-white">
               Verification accepted
@@ -199,7 +199,7 @@ export function LoginForm() {
           onChange={(event) =>
             setSelectedRole(event.target.value as "VIEWER" | "ADMIN")
           }
-          className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-slate-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+          className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
         >
           <option value="VIEWER">VIEWER</option>
           <option value="ADMIN">ADMIN</option>

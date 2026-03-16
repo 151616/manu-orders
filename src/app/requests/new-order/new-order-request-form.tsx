@@ -301,7 +301,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
             ref={categorySelectRef}
             name="category"
             defaultValue={state.submittedValues.category ?? ""}
-            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-slate-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
           >
             <option value="">Select category</option>
             {ORDER_CATEGORIES.map((cat) => (

@@ -186,7 +186,7 @@ function OrderRequestCard({
               <select
                 name="category"
                 defaultValue={editState.submittedValues.category ?? req.category}
-                className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-slate-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+                className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
               >
                 <option value="">Select category</option>
                 {ORDER_CATEGORIES.map((cat) => (
@@ -376,7 +376,7 @@ function TrackingRequestCard({
               name="type"
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value as ManuRequestType)}
-              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-slate-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
             >
               <option value="CNC">CNC</option>
               <option value="DRILL">Drill</option>
@@ -580,7 +580,7 @@ function ViewerStatusToast({
 
   return (
     <div
-      className={`fixed right-3 top-3 z-50 max-w-xs overflow-hidden rounded-xl border bg-white shadow-lg dark:bg-slate-900 ${borderCls}`}
+      className={`fixed right-3 top-3 z-50 max-w-xs overflow-hidden rounded-xl border bg-white shadow-lg dark:bg-zinc-900 ${borderCls}`}
     >
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <p className={`text-sm font-medium ${textCls}`}>{text}</p>
