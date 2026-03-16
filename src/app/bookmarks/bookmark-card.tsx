@@ -11,6 +11,11 @@ import {
 import { SubmitButton } from "@/components/submit-button";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
 
+function toExternalUrl(url: string | null | undefined): string {
+  if (!url) return "#";
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 type BookmarkCardProps = {
   bookmark: Bookmark;
   canMutate: boolean;
@@ -59,7 +64,7 @@ function SiteBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
           </form>
           {bookmark.siteUrl ? (
             <a
-              href={bookmark.siteUrl}
+              href={toExternalUrl(bookmark.siteUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 text-xs text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white"
@@ -77,7 +82,7 @@ function SiteBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
       ) : (
         bookmark.siteUrl ? (
           <a
-            href={bookmark.siteUrl}
+            href={toExternalUrl(bookmark.siteUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="min-w-0 flex-1 truncate text-xs text-indigo-600 underline underline-offset-2 hover:text-indigo-800 dark:text-indigo-400"
@@ -139,7 +144,7 @@ function TemplateBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
       ) : (
         bookmark.defaultOrderUrl ? (
           <a
-            href={bookmark.defaultOrderUrl}
+            href={toExternalUrl(bookmark.defaultOrderUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="min-w-0 flex-1 truncate text-xs text-indigo-600 underline underline-offset-2 hover:text-indigo-800 dark:text-indigo-400"

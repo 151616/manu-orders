@@ -22,6 +22,11 @@ type NavItem = {
 
 const MAX_VISIBLE_SITE_BOOKMARKS = 4;
 
+function toExternalUrl(url: string | null | undefined): string {
+  if (!url) return "#";
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 function isPathActive(pathname: string, href: string) {
   if (href === "/queue") {
     return (
@@ -141,7 +146,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
           {visibleSiteBookmarks.map((bookmark) => (
             <a
               key={bookmark.id}
-              href={bookmark.siteUrl ?? "#"}
+              href={toExternalUrl(bookmark.siteUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="whitespace-nowrap rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-900 hover:border-sky-400 hover:bg-sky-100 dark:border-sky-500/40 dark:bg-sky-900/20 dark:text-sky-300 dark:hover:border-sky-400/60 dark:hover:bg-sky-900/40"
@@ -159,7 +164,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
                 {overflowSiteBookmarks.map((bookmark) => (
                   <a
                     key={bookmark.id}
-                    href={bookmark.siteUrl ?? "#"}
+                    href={toExternalUrl(bookmark.siteUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block rounded-md px-2 py-1.5 text-sm text-black/85 hover:bg-sky-50 hover:text-black dark:text-white/85 dark:hover:bg-sky-900/30 dark:hover:text-white"

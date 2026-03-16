@@ -60,7 +60,8 @@ function createPrismaClient() {
   const adapter = new PrismaPg({
     connectionString: normalizedDatabaseUrl,
     ssl,
-    max: 3,
+    max: 1,
+    idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 15000,
   });
 
