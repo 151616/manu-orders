@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useActionState, useMemo } from "react";
+import { useState, useEffect, useActionState, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { NewOrderRequestForm } from "@/app/requests/new-order/new-order-request-form";
 import { NewTrackingRequestForm } from "@/app/requests/new-tracking/new-tracking-request-form";
@@ -477,6 +477,111 @@ function TrackingRequestCard({
   );
 }
 
+const STATUS_TOAST_KEY = "mq:viewer:notifiedStatuses";
+
+type StatusToastMessage = {
+  tone: "approved" | "rejected" | "mixed";
+  approved: number;
+  rejected: number;
+};
+
+function useViewerStatusToast(
+  orderRequests: SerializedOrderRequest[],
+  trackingRequests: SerializedTrackingRequest[],
+) {
+  const [toast, setToast] = useState<StatusToastMessage | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STATUS_TOAST_KEY);
+    const notified: Record<string, string> = stored ? (JSON.parse(stored) as Record<string, string>) : {};
+
+    const all = [
+      ...orderRequests.map((r) => ({ id: r.id, status: r.status as string })),
+      ...trackingRequests.map((r) => ({ id: r.id, status: r.status as string })),
+    ];
+
+    let approved = 0;
+    let rejected = 0;
+
+    for (const req of all) {
+      if (
+        (req.status === "APPROVED" || req.status === "REJECTED") &&
+        notified[req.id] !== req.status
+      ) {
+        if (req.status === "APPROVED") approved++;
+        else rejected++;
+        notified[req.id] = req.status;
+      }
+    }
+
+    if (approved > 0 || rejected > 0) {
+      localStorage.setItem(STATUS_TOAST_KEY, JSON.stringify(notified));
+      const tone = approved > 0 && rejected > 0 ? "mixed" : approved > 0 ? "approved" : "rejected";
+      setToast({ tone, approved, rejected });
+      const timer = setTimeout(() => setToast(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const dismiss = useCallback(() => setToast(null), []);
+  return { toast, dismiss };
+}
+
+function ViewerStatusToast({
+  orderRequests,
+  trackingRequests,
+}: {
+  orderRequests: SerializedOrderRequest[];
+  trackingRequests: SerializedTrackingRequest[];
+}) {
+  const { toast, dismiss } = useViewerStatusToast(orderRequests, trackingRequests);
+  if (!toast) return null;
+
+  const { tone, approved, rejected } = toast;
+  const total = approved + rejected;
+
+  let text = "";
+  if (tone === "approved") {
+    text = `${total} request${total === 1 ? "" : "s"} approved ✓`;
+  } else if (tone === "rejected") {
+    text = `${total} request${total === 1 ? "" : "s"} rejected`;
+  } else {
+    text = `${approved} approved, ${rejected} rejected`;
+  }
+
+  const borderCls =
+    tone === "approved"
+      ? "border-green-200 dark:border-green-500/30"
+      : tone === "rejected"
+        ? "border-red-200 dark:border-red-500/30"
+        : "border-amber-200 dark:border-amber-500/30";
+
+  const textCls =
+    tone === "approved"
+      ? "text-green-900 dark:text-green-200"
+      : tone === "rejected"
+        ? "text-red-900 dark:text-red-200"
+        : "text-amber-900 dark:text-amber-200";
+
+  return (
+    <div
+      className={`fixed right-3 top-3 z-50 max-w-xs rounded-xl border bg-white px-4 py-3 shadow-lg dark:bg-slate-900 ${borderCls}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className={`text-sm font-medium ${textCls}`}>{text}</p>
+        <button
+          onClick={dismiss}
+          className="text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white"
+          aria-label="Dismiss"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   isAdmin: boolean;
   orderRequests: SerializedOrderRequest[];
@@ -493,6 +598,9 @@ export function RequestsClient({ isAdmin, orderRequests, trackingRequests }: Pro
 
   return (
     <section className="space-y-6">
+      {!isAdmin ? (
+        <ViewerStatusToast orderRequests={orderRequests} trackingRequests={trackingRequests} />
+      ) : null}
       <header>
         <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white">
           {isAdmin ? "Pending Requests" : "My Requests"}

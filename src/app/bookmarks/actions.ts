@@ -998,3 +998,71 @@ export async function permanentlyDeleteBookmark(
   revalidatePath("/trash");
   redirect(redirectTarget);
 }
+
+// ─── Quick inline URL updates (no redirect) ───────────────────────────────────
+
+export async function updateSiteBookmarkLink(
+  bookmarkId: string,
+  _previousState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await requireAdmin();
+  const parsedBookmarkId = parseActionId(bookmarkId);
+
+  if (!parsedBookmarkId) {
+    return { success: null, error: "Invalid bookmark.", fieldErrors: {}, submittedValues: {} };
+  }
+
+  const siteUrl = getNullableTrimmedString(formData.get("siteUrl"));
+
+  const existing = await prisma.bookmark.findFirst({
+    where: { id: parsedBookmarkId, kind: "SITE", createdByLabel: user.label, isDeleted: false },
+  });
+
+  if (!existing) {
+    return { success: null, error: "Bookmark not found.", fieldErrors: {}, submittedValues: { siteUrl: siteUrl ?? "" } };
+  }
+
+  try {
+    await prisma.bookmark.update({ where: { id: parsedBookmarkId }, data: { siteUrl } });
+  } catch (error) {
+    return { success: null, error: handleServerMutationError("updateSiteBookmarkLink", error), fieldErrors: {}, submittedValues: { siteUrl: siteUrl ?? "" } };
+  }
+
+  revalidatePath("/bookmarks");
+  revalidatePath("/orders/new");
+  return { success: "Saved.", error: null, fieldErrors: {}, submittedValues: { siteUrl: siteUrl ?? "" } };
+}
+
+export async function updateTemplateBookmarkLink(
+  bookmarkId: string,
+  _previousState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await requireAdmin();
+  const parsedBookmarkId = parseActionId(bookmarkId);
+
+  if (!parsedBookmarkId) {
+    return { success: null, error: "Invalid bookmark.", fieldErrors: {}, submittedValues: {} };
+  }
+
+  const defaultOrderUrl = getNullableTrimmedString(formData.get("defaultOrderUrl"));
+
+  const existing = await prisma.bookmark.findFirst({
+    where: { id: parsedBookmarkId, kind: "TEMPLATE", createdByLabel: user.label, isDeleted: false },
+  });
+
+  if (!existing) {
+    return { success: null, error: "Bookmark not found.", fieldErrors: {}, submittedValues: { defaultOrderUrl: defaultOrderUrl ?? "" } };
+  }
+
+  try {
+    await prisma.bookmark.update({ where: { id: parsedBookmarkId }, data: { defaultOrderUrl } });
+  } catch (error) {
+    return { success: null, error: handleServerMutationError("updateTemplateBookmarkLink", error), fieldErrors: {}, submittedValues: { defaultOrderUrl: defaultOrderUrl ?? "" } };
+  }
+
+  revalidatePath("/bookmarks");
+  revalidatePath("/orders/new");
+  return { success: "Saved.", error: null, fieldErrors: {}, submittedValues: { defaultOrderUrl: defaultOrderUrl ?? "" } };
+}

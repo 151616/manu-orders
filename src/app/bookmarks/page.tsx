@@ -60,25 +60,29 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
 
       {canMutate ? <CreateBookmarkForm /> : null}
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
-        <h2 className="text-lg font-semibold text-black dark:text-white">Websites</h2>
+      <div className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+        <h2 className="mb-3 text-lg font-semibold text-black dark:text-white">Websites</h2>
         {siteBookmarks.length === 0 ? (
           <p className="text-sm text-black/70 dark:text-white/70">No website bookmarks yet.</p>
         ) : (
-          siteBookmarks.map((bookmark) => (
-            <BookmarkCard key={bookmark.id} bookmark={bookmark} canMutate={canMutate} />
-          ))
+          <ul className="space-y-2">
+            {siteBookmarks.map((bookmark) => (
+              <BookmarkCard key={bookmark.id} bookmark={bookmark} canMutate={canMutate} />
+            ))}
+          </ul>
         )}
       </div>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
-        <h2 className="text-lg font-semibold text-black dark:text-white">Templates</h2>
+      <div className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+        <h2 className="mb-3 text-lg font-semibold text-black dark:text-white">Templates</h2>
         {templateBookmarks.length === 0 ? (
           <p className="text-sm text-black/70 dark:text-white/70">No template bookmarks yet.</p>
         ) : (
-          templateBookmarks.map((bookmark) => (
-            <BookmarkCard key={bookmark.id} bookmark={bookmark} canMutate={canMutate} />
-          ))
+          <ul className="space-y-2">
+            {templateBookmarks.map((bookmark) => (
+              <BookmarkCard key={bookmark.id} bookmark={bookmark} canMutate={canMutate} />
+            ))}
+          </ul>
         )}
       </div>
     </section>

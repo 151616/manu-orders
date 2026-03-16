@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import "./globals.css";
 import { PageProgressBar } from "@/components/page-progress-bar";
 import { TopNav } from "@/components/top-nav";
+import { PendingRequestsToast } from "@/components/pending-requests-toast";
 import { FirebaseAnalyticsBootstrap } from "@/components/firebase-analytics-bootstrap";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getSession } from "@/lib/auth";
@@ -87,6 +88,7 @@ export default async function RootLayout({
           <FirebaseAnalyticsBootstrap />
           <PageProgressBar />
           {user ? <TopNav user={user} siteBookmarks={siteBookmarks} pendingRequestCount={pendingRequestCount} /> : null}
+          {user?.role === "ADMIN" ? <PendingRequestsToast pendingCount={pendingRequestCount} /> : null}
           <main className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
             {children}
           </main>
