@@ -149,7 +149,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
               href={toExternalUrl(bookmark.siteUrl)}
               target="_blank"
               rel="noopener noreferrer"
-              className="whitespace-nowrap rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-900 hover:border-sky-400 hover:bg-sky-100 dark:border-sky-500/40 dark:bg-sky-900/20 dark:text-sky-300 dark:hover:border-sky-400/60 dark:hover:bg-sky-900/40"
+              className="whitespace-nowrap rounded-full border border-black/15 bg-white px-3 py-1.5 text-sm font-medium text-black/80 hover:border-black/25 hover:bg-black/5 hover:text-black dark:border-white/15 dark:bg-white/5 dark:text-white/80 dark:hover:border-white/30 dark:hover:bg-white/10 dark:hover:text-white"
             >
               {bookmark.name}
             </a>
@@ -157,7 +157,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
 
           {overflowSiteBookmarks.length > 0 ? (
             <details className="relative">
-              <summary className="cursor-pointer list-none whitespace-nowrap rounded-full border border-sky-300 bg-white px-3 py-1.5 text-sm font-medium text-sky-900 hover:border-sky-400 hover:bg-sky-50 dark:border-sky-500/40 dark:bg-transparent dark:text-sky-300 dark:hover:border-sky-400/60 dark:hover:bg-sky-900/20">
+              <summary className="cursor-pointer list-none whitespace-nowrap rounded-full border border-black/15 bg-white px-3 py-1.5 text-sm font-medium text-black/80 hover:border-black/25 hover:bg-black/5 hover:text-black dark:border-white/15 dark:bg-transparent dark:text-white/80 dark:hover:border-white/30 dark:hover:bg-white/10 dark:hover:text-white">
                 More Sites
               </summary>
               <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
@@ -167,7 +167,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
                     href={toExternalUrl(bookmark.siteUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block rounded-md px-2 py-1.5 text-sm text-black/85 hover:bg-sky-50 hover:text-black dark:text-white/85 dark:hover:bg-sky-900/30 dark:hover:text-white"
+                    className="block rounded-md px-2 py-1.5 text-sm text-black/85 hover:bg-black/5 hover:text-black dark:text-white/85 dark:hover:bg-white/10 dark:hover:text-white"
                   >
                     {bookmark.name}
                   </a>
