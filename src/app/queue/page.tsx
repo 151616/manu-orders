@@ -8,13 +8,16 @@ import { QueueRuntime } from "@/app/queue/queue-runtime";
 import { QueueFiltersDropdown } from "@/app/queue/queue-filters-dropdown";
 import { PriorityStarsDisplay } from "@/components/priority-stars-display";
 import { StatusBadge } from "@/components/status-badge";
+import { RobotBadge } from "@/components/robot-badge";
 import { ToastBanner } from "@/components/toast-banner";
 import { requireAuth } from "@/lib/auth";
 import {
   ORDER_CATEGORIES,
   ORDER_CATEGORY_LABELS,
+  ROBOTS,
   type OrderCategory,
   type OrderStatus,
+  type Robot,
   ORDER_STATUSES,
 } from "@/lib/order-domain";
 import { getEtaDeltaDays, getRemainingEtaDays } from "@/lib/eta";
@@ -24,6 +27,7 @@ type QueuePageProps = {
     search?: string | string[];
     status?: string | string[];
     category?: string | string[];
+    robot?: string | string[];
     toast?: string | string[];
     tone?: string | string[];
     undoOrderId?: string | string[];
@@ -72,6 +76,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   const search = first(params.search)?.trim() ?? "";
   const statusRaw = first(params.status) ?? "ALL";
   const categoryRaw = first(params.category) ?? "ALL";
+  const robotRaw = first(params.robot) ?? "ALL";
   const isCompact = first(params.view) === "compact";
   const toastCode = first(params.toast);
   const toastTone = first(params.tone) === "debug" ? "debug" : "success";
@@ -94,8 +99,10 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
     ORDER_CATEGORIES.includes(categoryRaw as OrderCategory)
       ? (categoryRaw as OrderCategory)
       : "ALL";
+  const robot: Robot | "ALL" =
+    ROBOTS.includes(robotRaw as Robot) ? (robotRaw as Robot) : "ALL";
 
-  const orders = await listOrders({ search, status, category });
+  const orders = await listOrders({ search, status, category, robot });
 
   return (
     <section className="space-y-5 sm:space-y-6">
@@ -143,7 +150,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
           )}
 
           <Link
-            href={buildQueueHref({ view: isCompact ? undefined : "compact", search: search || undefined, status: status !== "ALL" ? status : undefined, category: category !== "ALL" ? category : undefined })}
+            href={buildQueueHref({ view: isCompact ? undefined : "compact", search: search || undefined, status: status !== "ALL" ? status : undefined, category: category !== "ALL" ? category : undefined, robot: robot !== "ALL" ? robot : undefined })}
             className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
           >
             {isCompact ? "Expanded View" : "Compact View"}
@@ -157,11 +164,12 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
         search={search}
         status={statusRaw}
         category={categoryRaw}
+        robot={robotRaw}
         isCompact={isCompact}
       />
 
       {orders.length === 0 ? (
-        <p className="rounded-xl border border-slate-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/70">
+        <p className="rounded-xl border border-zinc-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/70">
           No orders found.
         </p>
       ) : (
@@ -182,8 +190,8 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                   isOverdue
                     ? "space-y-3 rounded-xl border border-red-200 bg-red-50/95 p-4 shadow-sm transition hover:border-red-300 hover:shadow-md dark:border-red-500/30 dark:bg-red-900/20 dark:hover:border-red-500/50"
                     : isDueSoon
-                      ? "space-y-3 rounded-xl border border-slate-300 bg-slate-50/95 p-4 shadow-sm transition hover:border-slate-400 hover:shadow-md dark:border-white/15 dark:bg-white/5 dark:hover:border-white/25"
-                      : "space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
+                      ? "space-y-3 rounded-xl border border-zinc-300 bg-zinc-50/95 p-4 shadow-sm transition hover:border-zinc-400 hover:shadow-md dark:border-white/15 dark:bg-white/5 dark:hover:border-white/25"
+                      : "space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm transition hover:border-zinc-300 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
                 }
               >
                 <Link href={`/orders/${order.id}`} className="block space-y-3">
@@ -197,6 +205,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       ) : isCompact && isDueSoon ? (
                         <span className="text-xs font-semibold text-black/60 dark:text-white/60">DUE SOON</span>
                       ) : null}
+                      <RobotBadge robot={(order as { robot?: string | null }).robot} />
                       <StatusBadge status={order.status} />
                     </div>
                   </div>

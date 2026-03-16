@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createManuRequest, finishManuRequest } from "./actions";
+import { CustomSelect } from "@/components/custom-select";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
+import { ROBOTS, ROBOT_LABELS, type Robot } from "@/lib/order-domain";
+import { RobotBadge } from "@/components/robot-badge";
 
 type ManuRequestType = "CNC" | "DRILL" | "TAP" | "CUT" | "OTHER";
 
@@ -16,11 +19,11 @@ const TYPE_LABELS: Record<ManuRequestType, string> = {
 };
 
 const TYPE_COLORS: Record<ManuRequestType, string> = {
-  CNC: "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/60",
-  DRILL: "bg-slate-200 text-slate-700 dark:bg-white/15 dark:text-white/60",
-  TAP: "bg-slate-300 text-slate-800 dark:bg-white/20 dark:text-white/70",
+  CNC: "bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-white/60",
+  DRILL: "bg-zinc-200 text-zinc-700 dark:bg-white/15 dark:text-white/60",
+  TAP: "bg-zinc-300 text-zinc-800 dark:bg-white/20 dark:text-white/70",
   CUT: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  OTHER: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-300",
+  OTHER: "bg-zinc-100 text-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-300",
 };
 
 export type ManuRequestItem = {
@@ -29,6 +32,7 @@ export type ManuRequestItem = {
   description: string | null;
   type: ManuRequestType;
   otherType: string | null;
+  robot: Robot | null;
   fileOriginalName: string | null;
   fileUrl: string | null;
   createdAt: string;
@@ -45,12 +49,14 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
     EMPTY_FORM_STATE,
   );
   const [selectedType, setSelectedType] = useState<ManuRequestType>("CNC");
+  const [selectedRobot, setSelectedRobot] = useState<Robot | "">("");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
       setSelectedType("CNC");
+      setSelectedRobot("");
       onClose();
     }
   }, [state.success, onClose]);
@@ -60,7 +66,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
       ref={formRef}
       action={formAction}
       encType="multipart/form-data"
-      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 dark:border-white/10 dark:bg-zinc-900"
+      className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4 dark:border-white/10 dark:bg-zinc-900"
     >
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-black dark:text-white">New Request</h2>
@@ -88,7 +94,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
             name="title"
             defaultValue={state.submittedValues.title ?? ""}
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.title ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
@@ -104,7 +110,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
             defaultValue={state.submittedValues.description ?? ""}
             rows={3}
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 resize-none dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-60 resize-none dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
         </label>
 
@@ -112,19 +118,19 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
           <span className="mb-1 block text-sm font-medium text-black dark:text-white">
             Type <span className="text-red-500">*</span>
           </span>
-          <select
+          <CustomSelect
             name="type"
             value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as ManuRequestType)}
+            onChange={(v) => setSelectedType(v as ManuRequestType)}
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
-          >
-            <option value="CNC">CNC</option>
-            <option value="DRILL">Drill</option>
-            <option value="TAP">Tap</option>
-            <option value="CUT">Cut</option>
-            <option value="OTHER">Other</option>
-          </select>
+            options={[
+              { value: "CNC", label: "CNC" },
+              { value: "DRILL", label: "Drill" },
+              { value: "TAP", label: "Tap" },
+              { value: "CUT", label: "Cut" },
+              { value: "OTHER", label: "Other" },
+            ]}
+          />
           {state.fieldErrors.type ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.type}</p>
           ) : null}
@@ -140,7 +146,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
               defaultValue={state.submittedValues.otherType ?? ""}
               disabled={isPending}
               placeholder="e.g. Weld, Sand, Polish..."
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {state.fieldErrors.otherType ? (
               <p className="mt-1 text-xs text-red-600">
@@ -152,6 +158,22 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-black dark:text-white">
+            Robot
+          </span>
+          <CustomSelect
+            name="robot"
+            value={selectedRobot}
+            onChange={(v) => setSelectedRobot(v as Robot | "")}
+            disabled={isPending}
+            options={[
+              { value: "", label: "Unassigned" },
+              ...ROBOTS.map((r) => ({ value: r, label: ROBOT_LABELS[r] })),
+            ]}
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-black dark:text-white">
             CNC File{" "}
             <span className="font-normal text-black/50 dark:text-white/50">(optional)</span>
           </span>
@@ -159,7 +181,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
             name="cncFile"
             type="file"
             disabled={isPending}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-black hover:file:bg-slate-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:file:bg-white/10 dark:file:text-white dark:hover:file:bg-white/20"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-black hover:file:bg-zinc-200 disabled:opacity-60 dark:border-white/20 dark:bg-white/5 dark:text-white dark:file:bg-white/10 dark:file:text-white dark:hover:file:bg-white/20"
           />
         </label>
       </div>
@@ -169,7 +191,7 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onClose}
           disabled={isPending}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-black/70 hover:bg-slate-50 disabled:opacity-60 dark:border-white/20 dark:text-white/70 dark:hover:bg-white/10"
+          className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-black/70 hover:bg-zinc-50 disabled:opacity-60 dark:border-white/20 dark:text-white/70 dark:hover:bg-white/10"
         >
           Cancel
         </button>
@@ -207,7 +229,7 @@ function RequestCard({
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3 dark:border-white/10 dark:bg-white/5">
+    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm flex flex-col gap-3 dark:border-white/10 dark:bg-white/5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -215,6 +237,7 @@ function RequestCard({
           >
             {typeLabel}
           </span>
+          <RobotBadge robot={request.robot} />
           <h3 className="text-sm font-semibold text-black dark:text-white">{request.title}</h3>
         </div>
         {isAdmin ? (
@@ -240,7 +263,7 @@ function RequestCard({
           href={request.fileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 self-start rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-black/80 hover:bg-slate-100 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
+          className="inline-flex items-center gap-1.5 self-start rounded-md border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-black/80 hover:bg-zinc-100 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -305,7 +328,7 @@ export function TrackingClient({ isAdmin, requests }: TrackingClientProps) {
       ) : null}
 
       {requests.length === 0 && !showForm ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center dark:border-white/10 dark:bg-white/5">
+        <div className="rounded-xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-white/10 dark:bg-white/5">
           <p className="text-sm text-black/50 dark:text-white/50">No active requests right now.</p>
           {isAdmin ? (
             <button

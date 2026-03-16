@@ -15,9 +15,10 @@ import {
   deleteTrackingFile,
   uploadTrackingFile,
 } from "@/lib/manu-tracking-storage";
-import type { ManuRequestType } from "@prisma/client";
+import type { ManuRequestType, Robot } from "@prisma/client";
 
 const VALID_TYPES: ManuRequestType[] = ["CNC", "DRILL", "TAP", "CUT", "OTHER"];
+const VALID_ROBOTS: Robot[] = ["LAMBDA", "GAMMA"];
 const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 export async function createManuRequest(
@@ -34,6 +35,8 @@ export async function createManuRequest(
   const description = getNullableTrimmedString(formData.get("description"));
   const typeRaw = getTrimmedString(formData.get("type"));
   const otherType = getNullableTrimmedString(formData.get("otherType"));
+  const robotRaw = getNullableTrimmedString(formData.get("robot"));
+  const robot: Robot | null = VALID_ROBOTS.includes(robotRaw as Robot) ? (robotRaw as Robot) : null;
 
   const fieldErrors: Record<string, string> = {};
 
@@ -83,17 +86,23 @@ export async function createManuRequest(
     }
 
     const bytes = Buffer.from(await fileEntry.arrayBuffer());
-    const uploaded = await uploadTrackingFile({
-      requestId,
-      originalName: fileEntry.name,
-      bytes,
-      contentType: fileEntry.type || null,
-    });
-
-    fileStoragePath = uploaded.storagePath;
-    fileOriginalName = fileEntry.name;
-    fileContentType = fileEntry.type || null;
-    fileSizeBytes = fileEntry.size;
+    try {
+      const uploaded = await uploadTrackingFile({
+        requestId,
+        originalName: fileEntry.name,
+        bytes,
+        contentType: fileEntry.type || null,
+      });
+      fileStoragePath = uploaded.storagePath;
+      fileOriginalName = fileEntry.name;
+      fileContentType = fileEntry.type || null;
+      fileSizeBytes = fileEntry.size;
+    } catch (uploadError) {
+      return {
+        ...EMPTY_FORM_STATE,
+        error: handleServerMutationError("uploadTrackingFile", uploadError),
+      };
+    }
   }
 
   try {
@@ -105,6 +114,7 @@ export async function createManuRequest(
         description,
         type: typeRaw as ManuRequestType,
         otherType: typeRaw === "OTHER" ? otherType : null,
+        robot,
         fileStoragePath,
         fileOriginalName,
         fileContentType,

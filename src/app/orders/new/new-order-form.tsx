@@ -2,10 +2,11 @@
 
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { createOrder } from "@/app/orders/actions";
+import { CustomSelect, type CustomSelectHandle } from "@/components/custom-select";
 import { FormMessage } from "@/components/form-message";
 import { PriorityStarsInput } from "@/components/priority-stars-input";
 import { SubmitButton } from "@/components/submit-button";
-import { ORDER_CATEGORIES, ORDER_CATEGORY_LABELS } from "@/lib/order-domain";
+import { ORDER_CATEGORIES, ORDER_CATEGORY_LABELS, ROBOTS, ROBOT_LABELS } from "@/lib/order-domain";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
 
 type NewOrderDefaults = {
@@ -127,7 +128,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
   const titleInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionInputRef = useRef<HTMLTextAreaElement | null>(null);
   const vendorInputRef = useRef<HTMLInputElement | null>(null);
-  const categorySelectRef = useRef<HTMLSelectElement | null>(null);
+  const categorySelectRef = useRef<CustomSelectHandle | null>(null);
   const orderUrlInputRef = useRef<HTMLInputElement | null>(null);
 
   const valueFor = (field: keyof NewOrderDefaults) =>
@@ -488,7 +489,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
       vendorInputRef.current.value = autofillSuggestion.vendor;
     }
     if (categorySelectRef.current) {
-      categorySelectRef.current.value = autofillSuggestion.category;
+      categorySelectRef.current.setValue(autofillSuggestion.category);
     }
     if (orderUrlInputRef.current) {
       orderUrlInputRef.current.value = autofillSuggestion.normalizedUrl;
@@ -572,7 +573,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           });
         }, CREATE_ORDER_DEBUG_TIMEOUT_MS);
       }}
-      className="space-y-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5"
+      className="space-y-4 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5"
     >
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white">Create New Order</h1>
@@ -581,7 +582,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
         </p>
       </div>
 
-      <section className="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+      <section className="rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-white/10 dark:bg-white/5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-semibold text-black dark:text-white">Extension Capture (optional)</p>
           <div className="flex gap-2">
@@ -590,7 +591,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
               onClick={() => {
                 void loadLatestCapture();
               }}
-              className="rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-black/80 hover:bg-slate-100 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
+              className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-black/80 hover:bg-zinc-100 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
             >
               Refresh
             </button>
@@ -656,16 +657,16 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
                   applyAutofill();
                 }
               }}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 pr-36 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 pr-36 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {autofillStatus === "loading" ? (
               <span
-                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-black dark:border-white/20 dark:border-t-white"
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -tranzinc-y-1/2 animate-spin rounded-full border-2 border-zinc-300 border-t-black dark:border-white/20 dark:border-t-white"
                 aria-hidden="true"
               />
             ) : null}
             {autofillStatus === "ready" ? (
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 dark:text-white/35">
+              <span className="pointer-events-none absolute right-3 top-1/2 -tranzinc-y-1/2 text-xs text-black/35 dark:text-white/35">
                 Press Tab to autofill
               </span>
             ) : null}
@@ -693,7 +694,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             ref={titleInputRef}
             name="title"
             defaultValue={valueFor("title")}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.title ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
@@ -707,7 +708,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             name="description"
             defaultValue={valueFor("description")}
             rows={4}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.description ? (
             <p className="mt-1 text-xs text-red-600">
@@ -721,7 +722,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <input
             name="requesterName"
             defaultValue={valueFor("requesterName")}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.requesterName ? (
             <p className="mt-1 text-xs text-red-600">
@@ -744,7 +745,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             min={0}
             max={365}
             defaultValue={valueFor("etaDays")}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.etaDays ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.etaDays}</p>
@@ -757,7 +758,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             ref={vendorInputRef}
             name="vendor"
             defaultValue={valueFor("vendor")}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.vendor ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.vendor}</p>
@@ -769,7 +770,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
           <input
             name="orderNumber"
             defaultValue={valueFor("orderNumber")}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.orderNumber ? (
             <p className="mt-1 text-xs text-red-600">
@@ -785,7 +786,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
             type="number"
             min={1}
             defaultValue={valueFor("quantity")}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.quantity ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.quantity}</p>
@@ -794,21 +795,27 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
 
         <label>
           <span className="mb-1 block text-sm font-medium text-black dark:text-white">Category</span>
-          <select
+          <CustomSelect
             ref={categorySelectRef}
             name="category"
             defaultValue={valueFor("category")}
-            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
-          >
-            {ORDER_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {ORDER_CATEGORY_LABELS[category]}
-              </option>
-            ))}
-          </select>
+            options={ORDER_CATEGORIES.map((c) => ({ value: c, label: ORDER_CATEGORY_LABELS[c] }))}
+          />
           {state.fieldErrors.category ? (
             <p className="mt-1 text-xs text-red-600">{state.fieldErrors.category}</p>
           ) : null}
+        </label>
+
+        <label>
+          <span className="mb-1 block text-sm font-medium text-black dark:text-white">Robot</span>
+          <CustomSelect
+            name="robot"
+            defaultValue={state.submittedValues.robot ?? ""}
+            options={[
+              { value: "", label: "Unassigned" },
+              ...ROBOTS.map((r) => ({ value: r, label: ROBOT_LABELS[r] })),
+            ]}
+          />
         </label>
       </div>
 

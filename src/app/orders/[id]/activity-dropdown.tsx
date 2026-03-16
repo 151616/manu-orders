@@ -26,7 +26,7 @@ export function ActivityDropdown({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-sm dark:border-white/10 dark:bg-white/5">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white/95 shadow-sm dark:border-white/10 dark:bg-white/5">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -53,7 +53,7 @@ export function ActivityDropdown({
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-slate-200 px-4 pb-4 pt-3 sm:px-6 dark:border-white/10">
+          <div className="border-t border-zinc-200 px-4 pb-4 pt-3 sm:px-6 dark:border-white/10">
             {activities.length === 0 ? (
               <p className="text-sm text-black/60 dark:text-white/60">No activity yet.</p>
             ) : (
@@ -61,7 +61,7 @@ export function ActivityDropdown({
                 {activities.map((activity) => (
                   <li
                     key={activity.id}
-                    className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5"
+                    className="rounded-lg border border-zinc-200 bg-zinc-50/80 p-3 dark:border-white/10 dark:bg-white/5"
                   >
                     <p className="text-xs text-black/50 dark:text-white/50">
                       {new Date(activity.at).toLocaleString()} by {activity.role}

@@ -95,7 +95,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-black/70 sm:hidden dark:bg-zinc-800 dark:text-white/70">
+            <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-black/70 sm:hidden dark:bg-zinc-800 dark:text-white/70">
               {user.role}
             </span>
             <span className="hidden text-xs text-black/60 sm:inline dark:text-white/60">
@@ -160,7 +160,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
               <summary className="cursor-pointer list-none whitespace-nowrap rounded-full border border-black/15 bg-white px-3 py-1.5 text-sm font-medium text-black/80 hover:border-black/25 hover:bg-black/5 hover:text-black dark:border-white/15 dark:bg-transparent dark:text-white/80 dark:hover:border-white/30 dark:hover:bg-white/10 dark:hover:text-white">
                 More Sites
               </summary>
-              <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
                 {overflowSiteBookmarks.map((bookmark) => (
                   <a
                     key={bookmark.id}

@@ -6,6 +6,7 @@ import {
 import {
   ORDER_CATEGORIES,
   ORDER_STATUSES,
+  ROBOTS,
 } from "@/lib/order-domain";
 
 const optionalText = (max: number) => z.string().max(max).nullable();
@@ -61,6 +62,7 @@ const requesterFieldsSchema = z.object({
 export const OrderCreateSchema = requesterFieldsSchema.extend({
   priority: z.number().int().min(1).max(5),
   etaDays: z.number().int().min(0).max(365),
+  robot: z.enum(ROBOTS).nullable().optional(),
 });
 export const OrderRequesterUpdateSchema = requesterFieldsSchema;
 
@@ -69,6 +71,7 @@ export const OrderManufacturingUpdateSchema = z.object({
   etaDays: z.number().int().min(0).max(365),
   status: z.enum(ORDER_STATUSES),
   notesFromManu: optionalText(2000),
+  robot: z.enum(ROBOTS).nullable().optional(),
 });
 
 const bookmarkTemplateFieldsSchema = z.object({

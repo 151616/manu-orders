@@ -11,7 +11,7 @@ import {
 } from "@/lib/form-utils";
 import { handleServerMutationError } from "@/lib/action-errors";
 import { prisma } from "@/lib/prisma";
-import type { ManuRequestType, OrderCategory } from "@prisma/client";
+import type { ManuRequestType, OrderCategory, Robot } from "@prisma/client";
 import { addDays } from "@/lib/eta";
 import { ORDER_CATEGORIES } from "@/lib/order-domain";
 
@@ -22,6 +22,7 @@ const VALID_TRACKING_TYPES: ManuRequestType[] = [
   "CUT",
   "OTHER",
 ];
+const VALID_ROBOTS: Robot[] = ["LAMBDA", "GAMMA"];
 
 // ─── Viewer: Submit order request ────────────────────────────────────────────
 
@@ -39,6 +40,8 @@ export async function createOrderRequest(
   const quantityRaw = getOptionalInt(formData.get("quantity"));
   const categoryRaw = getTrimmedString(formData.get("category"));
   const priorityRaw = getOptionalInt(formData.get("priority"));
+  const robotRaw = getNullableTrimmedString(formData.get("robot"));
+  const robot: Robot | null = VALID_ROBOTS.includes(robotRaw as Robot) ? (robotRaw as Robot) : null;
 
   const fieldErrors: Record<string, string> = {};
 
@@ -65,6 +68,7 @@ export async function createOrderRequest(
         quantity: quantityRaw?.toString() ?? "",
         category: categoryRaw,
         priority: priorityRaw?.toString() ?? "",
+        robot: robotRaw ?? "",
       },
     };
   }
@@ -81,6 +85,7 @@ export async function createOrderRequest(
         quantity: quantityRaw ?? null,
         category: categoryRaw as OrderCategory,
         priority: priorityRaw ?? 3,
+        robot,
       },
     });
   } catch (error) {
@@ -111,6 +116,8 @@ export async function createTrackingRequest(
   const description = getNullableTrimmedString(formData.get("description"));
   const typeRaw = getTrimmedString(formData.get("type"));
   const otherType = getNullableTrimmedString(formData.get("otherType"));
+  const robotRaw = getNullableTrimmedString(formData.get("robot"));
+  const robot: Robot | null = VALID_ROBOTS.includes(robotRaw as Robot) ? (robotRaw as Robot) : null;
 
   const fieldErrors: Record<string, string> = {};
 
@@ -144,6 +151,7 @@ export async function createTrackingRequest(
         description,
         type: typeRaw as ManuRequestType,
         otherType: typeRaw === "OTHER" ? otherType : null,
+        robot,
       },
     });
   } catch (error) {
@@ -186,6 +194,7 @@ export async function approveOrderRequest(id: string): Promise<void> {
         etaTargetDate: addDays(new Date(), req.etaDays),
         status: "NEW",
         createdByLabel: admin.label,
+        robot: req.robot ?? null,
       },
     }),
     prisma.orderRequest.update({
@@ -202,8 +211,9 @@ export async function approveOrderRequest(id: string): Promise<void> {
   revalidatePath("/requests");
 }
 
-export async function rejectOrderRequest(id: string): Promise<void> {
+export async function rejectOrderRequest(id: string, formData: FormData): Promise<void> {
   const admin = await requireAdmin();
+  const reason = (formData.get("reason") as string | null)?.trim() || null;
 
   await prisma.orderRequest.update({
     where: { id },
@@ -211,6 +221,7 @@ export async function rejectOrderRequest(id: string): Promise<void> {
       status: "REJECTED",
       reviewedAt: new Date(),
       reviewedByLabel: admin.label,
+      rejectionReason: reason,
     },
   });
 
@@ -234,6 +245,7 @@ export async function approveTrackingRequest(id: string): Promise<void> {
         otherType: req.otherType,
         isFinished: false,
         createdByLabel: admin.label,
+        robot: req.robot ?? null,
       },
     }),
     prisma.trackingRequest.update({
@@ -250,8 +262,9 @@ export async function approveTrackingRequest(id: string): Promise<void> {
   revalidatePath("/requests");
 }
 
-export async function rejectTrackingRequest(id: string): Promise<void> {
+export async function rejectTrackingRequest(id: string, formData: FormData): Promise<void> {
   const admin = await requireAdmin();
+  const reason = (formData.get("reason") as string | null)?.trim() || null;
 
   await prisma.trackingRequest.update({
     where: { id },
@@ -259,6 +272,7 @@ export async function rejectTrackingRequest(id: string): Promise<void> {
       status: "REJECTED",
       reviewedAt: new Date(),
       reviewedByLabel: admin.label,
+      rejectionReason: reason,
     },
   });
 
@@ -292,6 +306,8 @@ export async function updateOrderRequest(
   const quantityRaw = getOptionalInt(formData.get("quantity"));
   const categoryRaw = getTrimmedString(formData.get("category"));
   const priorityRaw = getOptionalInt(formData.get("priority"));
+  const robotRawEdit = getNullableTrimmedString(formData.get("robot"));
+  const robotEdit: Robot | null = VALID_ROBOTS.includes(robotRawEdit as Robot) ? (robotRawEdit as Robot) : null;
 
   const fieldErrors: Record<string, string> = {};
   if (!title) fieldErrors.title = "Title is required.";
@@ -317,6 +333,7 @@ export async function updateOrderRequest(
         quantity: quantityRaw?.toString() ?? "",
         category: categoryRaw,
         priority: priorityRaw?.toString() ?? "",
+        robot: robotRawEdit ?? "",
       },
     };
   }
@@ -333,6 +350,7 @@ export async function updateOrderRequest(
         quantity: quantityRaw ?? null,
         category: categoryRaw as OrderCategory,
         priority: priorityRaw ?? req.priority,
+        robot: robotEdit,
       },
     });
   } catch (error) {

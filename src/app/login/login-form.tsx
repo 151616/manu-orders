@@ -19,15 +19,11 @@ function logLoginDebug(event: string, details?: Record<string, unknown>) {
 }
 
 export function LoginForm() {
-  const [selectedRole, setSelectedRole] = useState<"VIEWER" | "ADMIN">(
-    "VIEWER",
-  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isVerifiedLoading, setIsVerifiedLoading] = useState(false);
   const submitRef = useRef<{
     startedAt: number;
-    role: "VIEWER" | "ADMIN";
     requestId: string;
   } | null>(null);
 
@@ -57,16 +53,12 @@ export function LoginForm() {
       return;
     }
 
-    logLoginDebug("request-pending", {
-      requestId: pendingMeta.requestId,
-      role: pendingMeta.role,
-    });
+    logLoginDebug("request-pending", { requestId: pendingMeta.requestId });
 
     const timeoutId = window.setTimeout(() => {
       const elapsedMs = Math.round(performance.now() - pendingMeta.startedAt);
       logLoginDebug("request-still-pending", {
         requestId: pendingMeta.requestId,
-        role: pendingMeta.role,
         elapsedMs,
         online: navigator.onLine,
       });
@@ -87,26 +79,18 @@ export function LoginForm() {
     <form
       onSubmit={async (event) => {
         event.preventDefault();
-        if (isPending || isVerifiedLoading) {
-          return;
-        }
+        if (isPending || isVerifiedLoading) return;
 
         const formData = new FormData(event.currentTarget);
-        const role = formData.get("role");
-        const roleCode = formData.get("roleCode");
-        const normalizedRole = role === "ADMIN" ? "ADMIN" : "VIEWER";
-        const normalizedRoleCode = typeof roleCode === "string" ? roleCode : "";
+        const code = typeof formData.get("code") === "string"
+          ? (formData.get("code") as string)
+          : "";
         const requestId = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
-        submitRef.current = {
-          startedAt: performance.now(),
-          role: normalizedRole,
-          requestId,
-        };
+        submitRef.current = { startedAt: performance.now(), requestId };
 
         logLoginDebug("submit", {
           requestId,
-          role: normalizedRole,
-          roleCodeLength: normalizedRoleCode.length,
+          codeLength: code.length,
           online: navigator.onLine,
           path: window.location.pathname,
         });
@@ -122,13 +106,8 @@ export function LoginForm() {
         try {
           const response = await fetch("/api/auth/login", {
             method: "POST",
-            headers: {
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({
-              role: normalizedRole,
-              roleCode: normalizedRoleCode,
-            }),
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ code }),
             signal: controller.signal,
           });
 
@@ -147,15 +126,9 @@ export function LoginForm() {
           }
 
           const redirectTo = payload?.redirectTo ?? "/queue";
-          logLoginDebug("request-success", {
-            requestId,
-            redirectTo,
-          });
+          logLoginDebug("request-success", { requestId, redirectTo });
           setIsVerifiedLoading(true);
-          logLoginDebug("request-verified-loading", {
-            requestId,
-            redirectTo,
-          });
+          logLoginDebug("request-verified-loading", { requestId, redirectTo });
           window.setTimeout(() => {
             window.location.assign(redirectTo);
           }, 80);
@@ -170,12 +143,12 @@ export function LoginForm() {
           setIsPending(false);
         }
       }}
-      className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-white/10 dark:bg-zinc-900"
+      className="w-full max-w-md space-y-4 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-white/10 dark:bg-zinc-900"
     >
       {isVerifiedLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 px-6 dark:bg-zinc-900/95">
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-lg dark:border-white/10 dark:bg-zinc-800">
-            <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-black dark:border-white/20 dark:border-t-white" />
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-lg dark:border-white/10 dark:bg-zinc-800">
+            <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-zinc-200 border-t-black dark:border-white/20 dark:border-t-white" />
             <p className="mt-4 text-base font-semibold text-black dark:text-white">
               Verification accepted
             </p>
@@ -188,40 +161,19 @@ export function LoginForm() {
 
       <h2 className="text-2xl font-bold tracking-tight text-black dark:text-white">Login</h2>
       <p className="text-sm text-black/65 dark:text-white/65">
-        Choose a role and enter the matching role code.
+        Enter your access code to continue.
       </p>
 
       <label className="block space-y-1">
-        <span className="text-sm font-medium text-black dark:text-white">Role</span>
-        <select
-          name="role"
-          value={selectedRole}
-          onChange={(event) =>
-            setSelectedRole(event.target.value as "VIEWER" | "ADMIN")
-          }
-          className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
-        >
-          <option value="VIEWER">VIEWER</option>
-          <option value="ADMIN">ADMIN</option>
-        </select>
-      </label>
-
-      <label className="block space-y-1">
-        <span className="text-sm font-medium text-black dark:text-white">
-          {selectedRole === "VIEWER" ? "Viewer Code" : "Admin Code"}
-        </span>
+        <span className="text-sm font-medium text-black dark:text-white">Access Code</span>
         <input
-          key={selectedRole}
           type="password"
-          name="roleCode"
+          name="code"
           autoComplete="off"
+          autoFocus
           required
-          className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
-          placeholder={
-            selectedRole === "VIEWER"
-              ? "Enter viewer code"
-              : "Enter admin code"
-          }
+          className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+          placeholder="Enter access code"
         />
       </label>
 
@@ -234,7 +186,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isPending || isVerifiedLoading}
-        className="w-full rounded-md bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-md bg-black px-3 py-2.5 text-sm font-semibold text-white hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-white/85"
       >
         {isVerifiedLoading
           ? "Loading workspace..."

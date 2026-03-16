@@ -13,6 +13,7 @@ import {
   rejectTrackingRequest,
 } from "@/app/requests/actions";
 import { ORDER_CATEGORIES, ORDER_CATEGORY_LABELS } from "@/lib/order-domain";
+import { CustomSelect } from "@/components/custom-select";
 import { PriorityStarsInput } from "@/components/priority-stars-input";
 import { SubmitButton } from "@/components/submit-button";
 import { FormMessage } from "@/components/form-message";
@@ -36,6 +37,7 @@ export type SerializedOrderRequest = {
   createdAt: string;
   status: RequestStatus;
   submittedByLabel: string;
+  rejectionReason: string | null;
   title: string;
   description: string | null;
   requesterName: string;
@@ -53,6 +55,7 @@ export type SerializedTrackingRequest = {
   createdAt: string;
   status: RequestStatus;
   submittedByLabel: string;
+  rejectionReason: string | null;
   title: string;
   description: string | null;
   type: string;
@@ -62,14 +65,14 @@ export type SerializedTrackingRequest = {
 function StatusBadge({ status }: { status: RequestStatus }) {
   if (status === "PENDING") {
     return (
-      <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/60">
+      <span className="inline-block rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-white/10 dark:text-white/60">
         Pending
       </span>
     );
   }
   if (status === "APPROVED") {
     return (
-      <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/60">
+      <span className="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
         Approved
       </span>
     );
@@ -113,6 +116,7 @@ function OrderRequestCard({
   isAdmin: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const secondsLeft = useCountdown(req.createdAt);
   const boundUpdate = useMemo(() => updateOrderRequest.bind(null, req.id), [req.id]);
   const [editState, editAction] = useActionState(boundUpdate, EMPTY_FORM_STATE);
@@ -139,7 +143,7 @@ function OrderRequestCard({
             <input
               name="title"
               defaultValue={editState.submittedValues.title ?? req.title}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {editState.fieldErrors.title ? (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editState.fieldErrors.title}</p>
@@ -152,7 +156,7 @@ function OrderRequestCard({
               name="description"
               defaultValue={editState.submittedValues.description ?? req.description ?? ""}
               rows={2}
-              className="w-full resize-none rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full resize-none rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
             />
           </label>
 
@@ -163,7 +167,7 @@ function OrderRequestCard({
             <input
               name="requesterName"
               defaultValue={editState.submittedValues.requesterName ?? req.requesterName}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {editState.fieldErrors.requesterName ? (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editState.fieldErrors.requesterName}</p>
@@ -176,23 +180,21 @@ function OrderRequestCard({
               <input
                 name="vendor"
                 defaultValue={editState.submittedValues.vendor ?? req.vendor ?? ""}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+                className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
               />
             </label>
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-black/80 dark:text-white/80">
                 Category <span className="text-red-500">*</span>
               </span>
-              <select
+              <CustomSelect
                 name="category"
                 defaultValue={editState.submittedValues.category ?? req.category}
-                className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
-              >
-                <option value="">Select category</option>
-                {ORDER_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{ORDER_CATEGORY_LABELS[cat]}</option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "Select category" },
+                  ...ORDER_CATEGORIES.map((c) => ({ value: c, label: ORDER_CATEGORY_LABELS[c] })),
+                ]}
+              />
               {editState.fieldErrors.category ? (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editState.fieldErrors.category}</p>
               ) : null}
@@ -207,7 +209,7 @@ function OrderRequestCard({
                 type="number"
                 min={1}
                 defaultValue={editState.submittedValues.quantity ?? req.quantity ?? ""}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+                className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
               />
             </label>
             <div>
@@ -235,7 +237,7 @@ function OrderRequestCard({
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+    <div className="space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-semibold text-black dark:text-white">{req.title}</p>
@@ -277,33 +279,71 @@ function OrderRequestCard({
       </p>
 
       {isAdmin ? (
-        <div className="flex gap-2 border-t border-black/10 pt-3 dark:border-white/10">
-          <form action={approveOrderRequest.bind(null, req.id)}>
-            <button
-              type="submit"
-              className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 dark:bg-white dark:text-black dark:hover:bg-white/85"
-            >
-              Approve → Create Order
-            </button>
-          </form>
-          <form action={rejectOrderRequest.bind(null, req.id)}>
-            <button
-              type="submit"
-              className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
-            >
-              Reject
-            </button>
-          </form>
+        <div className="border-t border-black/10 pt-3 dark:border-white/10">
+          {rejecting ? (
+            <form action={rejectOrderRequest.bind(null, req.id)} className="space-y-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
+                  Rejection reason <span className="text-black/40 dark:text-white/40">(optional)</span>
+                </span>
+                <textarea
+                  name="reason"
+                  rows={2}
+                  autoFocus
+                  placeholder="e.g. Out of budget, duplicate request…"
+                  className="w-full resize-none rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/40 dark:focus:border-white/40 dark:focus:ring-white/10"
+                />
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  Confirm Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRejecting(false)}
+                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-black/60 hover:bg-black/5 dark:border-white/20 dark:text-white/60 dark:hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex gap-2">
+              <form action={approveOrderRequest.bind(null, req.id)}>
+                <button
+                  type="submit"
+                  className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 dark:bg-white dark:text-black dark:hover:bg-white/85"
+                >
+                  Approve → Create Order
+                </button>
+              </form>
+              <button
+                type="button"
+                onClick={() => setRejecting(true)}
+                className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                Reject
+              </button>
+            </div>
+          )}
         </div>
       ) : canEdit ? (
         <div className="flex items-center gap-3 border-t border-black/10 pt-3 dark:border-white/10">
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
           >
             Edit
           </button>
           <span className="text-xs text-black/40 dark:text-white/40">{secondsLeft}s left to edit</span>
+        </div>
+      ) : req.status === "REJECTED" && req.rejectionReason ? (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-500/20 dark:bg-red-900/10">
+          <p className="text-xs font-medium text-red-700 dark:text-red-400">Rejection reason</p>
+          <p className="mt-0.5 text-xs text-red-700/80 dark:text-red-400/80">{req.rejectionReason}</p>
         </div>
       ) : null}
     </div>
@@ -318,6 +358,7 @@ function TrackingRequestCard({
   isAdmin: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const [selectedType, setSelectedType] = useState<ManuRequestType>(
     (req.type as ManuRequestType) || "CNC",
   );
@@ -351,7 +392,7 @@ function TrackingRequestCard({
             <input
               name="title"
               defaultValue={editState.submittedValues.title ?? req.title}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {editState.fieldErrors.title ? (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editState.fieldErrors.title}</p>
@@ -364,7 +405,7 @@ function TrackingRequestCard({
               name="description"
               defaultValue={editState.submittedValues.description ?? req.description ?? ""}
               rows={2}
-              className="w-full resize-none rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full resize-none rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
             />
           </label>
 
@@ -372,18 +413,18 @@ function TrackingRequestCard({
             <span className="mb-1 block text-sm font-medium text-black/80 dark:text-white/80">
               Type <span className="text-red-500">*</span>
             </span>
-            <select
+            <CustomSelect
               name="type"
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as ManuRequestType)}
-              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
-            >
-              <option value="CNC">CNC</option>
-              <option value="DRILL">Drill</option>
-              <option value="TAP">Tap</option>
-              <option value="CUT">Cut</option>
-              <option value="OTHER">Other</option>
-            </select>
+              onChange={(v) => setSelectedType(v as ManuRequestType)}
+              options={[
+                { value: "CNC", label: "CNC" },
+                { value: "DRILL", label: "Drill" },
+                { value: "TAP", label: "Tap" },
+                { value: "CUT", label: "Cut" },
+                { value: "OTHER", label: "Other" },
+              ]}
+            />
             {editState.fieldErrors.type ? (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editState.fieldErrors.type}</p>
             ) : null}
@@ -397,7 +438,7 @@ function TrackingRequestCard({
               <input
                 name="otherType"
                 defaultValue={editState.submittedValues.otherType ?? req.otherType ?? ""}
-                className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+                className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
               />
               {editState.fieldErrors.otherType ? (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editState.fieldErrors.otherType}</p>
@@ -421,7 +462,7 @@ function TrackingRequestCard({
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+    <div className="space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-semibold text-black dark:text-white">{req.title}</p>
@@ -444,33 +485,71 @@ function TrackingRequestCard({
       </p>
 
       {isAdmin ? (
-        <div className="flex gap-2 border-t border-black/10 pt-3 dark:border-white/10">
-          <form action={approveTrackingRequest.bind(null, req.id)}>
-            <button
-              type="submit"
-              className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 dark:bg-white dark:text-black dark:hover:bg-white/85"
-            >
-              Approve → Add to Tracking
-            </button>
-          </form>
-          <form action={rejectTrackingRequest.bind(null, req.id)}>
-            <button
-              type="submit"
-              className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
-            >
-              Reject
-            </button>
-          </form>
+        <div className="border-t border-black/10 pt-3 dark:border-white/10">
+          {rejecting ? (
+            <form action={rejectTrackingRequest.bind(null, req.id)} className="space-y-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
+                  Rejection reason <span className="text-black/40 dark:text-white/40">(optional)</span>
+                </span>
+                <textarea
+                  name="reason"
+                  rows={2}
+                  autoFocus
+                  placeholder="e.g. Already covered, not needed right now…"
+                  className="w-full resize-none rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/40 dark:focus:border-white/40 dark:focus:ring-white/10"
+                />
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  Confirm Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRejecting(false)}
+                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-black/60 hover:bg-black/5 dark:border-white/20 dark:text-white/60 dark:hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex gap-2">
+              <form action={approveTrackingRequest.bind(null, req.id)}>
+                <button
+                  type="submit"
+                  className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 dark:bg-white dark:text-black dark:hover:bg-white/85"
+                >
+                  Approve → Add to Tracking
+                </button>
+              </form>
+              <button
+                type="button"
+                onClick={() => setRejecting(true)}
+                className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                Reject
+              </button>
+            </div>
+          )}
         </div>
       ) : canEdit ? (
         <div className="flex items-center gap-3 border-t border-black/10 pt-3 dark:border-white/10">
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
           >
             Edit
           </button>
           <span className="text-xs text-black/40 dark:text-white/40">{secondsLeft}s left to edit</span>
+        </div>
+      ) : req.status === "REJECTED" && req.rejectionReason ? (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-500/20 dark:bg-red-900/10">
+          <p className="text-xs font-medium text-red-700 dark:text-red-400">Rejection reason</p>
+          <p className="mt-0.5 text-xs text-red-700/80 dark:text-red-400/80">{req.rejectionReason}</p>
         </div>
       ) : null}
     </div>
@@ -638,7 +717,7 @@ export function RequestsClient({ isAdmin, orderRequests, trackingRequests }: Pro
       {!isAdmin ? (
         <div className="space-y-2">
           {/* Request a Part */}
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white/95 shadow-sm dark:border-white/10 dark:bg-white/5">
             <button
               type="button"
               onClick={() => {
@@ -660,7 +739,7 @@ export function RequestsClient({ isAdmin, orderRequests, trackingRequests }: Pro
               style={{ gridTemplateRows: showOrderForm ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <div className="border-t border-slate-200 px-4 pb-5 pt-4 dark:border-white/10">
+                <div className="border-t border-zinc-200 px-4 pb-5 pt-4 dark:border-white/10">
                   <NewOrderRequestForm
                     onSuccess={() => setShowOrderForm(false)}
                     onCancel={() => setShowOrderForm(false)}
@@ -671,7 +750,7 @@ export function RequestsClient({ isAdmin, orderRequests, trackingRequests }: Pro
           </div>
 
           {/* Request Tracking */}
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white/95 shadow-sm dark:border-white/10 dark:bg-white/5">
             <button
               type="button"
               onClick={() => {
@@ -693,7 +772,7 @@ export function RequestsClient({ isAdmin, orderRequests, trackingRequests }: Pro
               style={{ gridTemplateRows: showTrackingForm ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <div className="border-t border-slate-200 px-4 pb-5 pt-4 dark:border-white/10">
+                <div className="border-t border-zinc-200 px-4 pb-5 pt-4 dark:border-white/10">
                   <NewTrackingRequestForm
                     onSuccess={() => setShowTrackingForm(false)}
                     onCancel={() => setShowTrackingForm(false)}
@@ -709,7 +788,7 @@ export function RequestsClient({ isAdmin, orderRequests, trackingRequests }: Pro
       <div className="space-y-3">
         <h2 className="text-base font-semibold text-black/80 dark:text-white/80">Part Requests</h2>
         {orderRequests.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white/95 p-5 text-sm text-black/60 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/60">
+          <p className="rounded-xl border border-zinc-200 bg-white/95 p-5 text-sm text-black/60 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/60">
             {isAdmin ? "No pending part requests." : "No part requests yet."}
           </p>
         ) : (
@@ -725,7 +804,7 @@ export function RequestsClient({ isAdmin, orderRequests, trackingRequests }: Pro
       <div className="space-y-3">
         <h2 className="text-base font-semibold text-black/80 dark:text-white/80">Tracking Requests</h2>
         {trackingRequests.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white/95 p-5 text-sm text-black/60 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/60">
+          <p className="rounded-xl border border-zinc-200 bg-white/95 p-5 text-sm text-black/60 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/60">
             {isAdmin ? "No pending tracking requests." : "No tracking requests yet."}
           </p>
         ) : (

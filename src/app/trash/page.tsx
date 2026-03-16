@@ -69,7 +69,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
         </p>
       </header>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+      <div className="space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
         <h2 className="text-lg font-semibold text-black dark:text-white">Orders</h2>
         {deletedOrders.length === 0 ? (
           <p className="text-sm text-black/70 dark:text-white/70">No deleted orders.</p>
@@ -90,7 +90,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
               return (
                 <li
                   key={order.id}
-                  className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
+                  className="flex flex-col items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
                 >
                   <div>
                     <p className="text-sm font-medium text-black dark:text-white">{order.title}</p>
@@ -123,7 +123,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
         )}
       </div>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+      <div className="space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
         <h2 className="text-lg font-semibold text-black dark:text-white">Bookmarks</h2>
         {deletedBookmarks.length === 0 ? (
           <p className="text-sm text-black/70 dark:text-white/70">No deleted bookmarks.</p>
@@ -144,7 +144,7 @@ export default async function TrashPage({ searchParams }: TrashPageProps) {
               return (
                 <li
                   key={bookmark.id}
-                  className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
+                  className="flex flex-col items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
                 >
                   <div>
                     <p className="text-sm font-medium text-black dark:text-white">

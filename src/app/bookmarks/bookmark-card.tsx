@@ -22,7 +22,7 @@ type BookmarkCardProps = {
 };
 
 const inputCls =
-  "min-w-0 flex-1 rounded-md border border-slate-300/80 px-2.5 py-1.5 text-xs text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10";
+  "min-w-0 flex-1 rounded-md border border-zinc-300/80 px-2.5 py-1.5 text-xs text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10";
 
 const saveBtnCls =
   "shrink-0 rounded-md border border-black/20 bg-white px-2.5 py-1.5 text-xs font-semibold text-black/80 hover:bg-black/5 hover:text-black disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/20 dark:bg-transparent dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white";
@@ -38,8 +38,8 @@ function SiteBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
   const currentUrl = state.submittedValues.siteUrl ?? bookmark.siteUrl ?? "";
 
   return (
-    <li className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/5">
-      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-white/10 dark:text-white/60">
+    <li className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 bg-white/95 px-3 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-white/10 dark:text-white/60">
         Site
       </span>
       <span className="w-32 shrink-0 truncate text-sm font-medium text-black dark:text-white">
@@ -105,8 +105,8 @@ function TemplateBookmarkRow({ bookmark, canMutate }: BookmarkCardProps) {
   const currentUrl = state.submittedValues.defaultOrderUrl ?? bookmark.defaultOrderUrl ?? "";
 
   return (
-    <li className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/5">
-      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-white/10 dark:text-white/60">
+    <li className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 bg-white/95 px-3 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-white/10 dark:text-white/60">
         Tmpl
       </span>
       <span className="w-32 shrink-0 truncate text-sm font-medium text-black dark:text-white">

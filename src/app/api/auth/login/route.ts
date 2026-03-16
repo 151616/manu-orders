@@ -1,6 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import {
   isAuthAttemptRateLimited,
   normalizeLoginEmail,
@@ -12,11 +11,6 @@ import {
   UserRoleValue,
   signSessionToken,
 } from "@/lib/session";
-
-const loginSchema = z.object({
-  role: z.enum(["VIEWER", "ADMIN"]),
-  roleCode: z.string().min(1),
-});
 
 type TeamRoleIdentity = {
   id: string;
@@ -37,18 +31,12 @@ const TEAM_ROLE_IDENTITIES: Record<UserRoleValue, TeamRoleIdentity> = {
   },
 };
 
-function roleRateLimitKey(role: UserRoleValue) {
-  return normalizeLoginEmail(`role:${role.toLowerCase()}`);
-}
+const RATE_LIMIT_KEY = normalizeLoginEmail("role:code-login");
 
 function secureCodeMatch(input: string, expected: string) {
   const inputBuffer = Buffer.from(input);
   const expectedBuffer = Buffer.from(expected);
-
-  if (inputBuffer.length !== expectedBuffer.length) {
-    return false;
-  }
-
+  if (inputBuffer.length !== expectedBuffer.length) return false;
   return timingSafeEqual(inputBuffer, expectedBuffer);
 }
 
@@ -57,27 +45,24 @@ function getExpectedRoleCode(role: UserRoleValue) {
     role === "ADMIN"
       ? process.env.TEAM_ADMIN_CODE ?? process.env.TEAM_MANU_CODE
       : process.env.TEAM_ACCESS_CODE;
-
-  if (!rawCode) {
-    return null;
-  }
-
+  if (!rawCode) return null;
   const normalized = rawCode.trim();
   return normalized.length > 0 ? normalized : null;
+}
+
+function detectRole(code: string): UserRoleValue | null {
+  const adminCode = getExpectedRoleCode("ADMIN");
+  if (adminCode && secureCodeMatch(code, adminCode)) return "ADMIN";
+  const viewerCode = getExpectedRoleCode("VIEWER");
+  if (viewerCode && secureCodeMatch(code, viewerCode)) return "VIEWER";
+  return null;
 }
 
 function getRequestIpAddress(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
-
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() || "unknown";
-  }
-
-  if (realIp) {
-    return realIp.trim();
-  }
-
+  if (forwardedFor) return forwardedFor.split(",")[0]?.trim() || "unknown";
+  if (realIp) return realIp.trim();
   return "unknown";
 }
 
@@ -94,27 +79,15 @@ export async function POST(request: NextRequest) {
       payload = null;
     }
 
-    const parsed = loginSchema.safeParse({
-      role:
-        payload &&
-        typeof payload === "object" &&
-        "role" in payload &&
-        typeof payload.role === "string"
-          ? payload.role
-          : "",
-      roleCode:
-        payload &&
-        typeof payload === "object" &&
-        "roleCode" in payload &&
-        typeof payload.roleCode === "string"
-          ? payload.roleCode.trim()
-          : "",
-    });
+    const code =
+      payload &&
+      typeof payload === "object" &&
+      "code" in payload &&
+      typeof payload.code === "string"
+        ? payload.code.trim()
+        : "";
 
     const ipAddress = getRequestIpAddress(request);
-    const limiterKey = parsed.success
-      ? roleRateLimitKey(parsed.data.role)
-      : normalizeLoginEmail("role:invalid");
 
     const rateLimited = await isAuthAttemptRateLimited({
       scope: "login",
@@ -124,33 +97,29 @@ export async function POST(request: NextRequest) {
       return jsonError(429, "Too many login attempts. Please try again later.");
     }
 
-    if (!parsed.success) {
+    if (!code) {
       await recordAuthAttempt({
         scope: "login",
-        key: limiterKey,
+        key: RATE_LIMIT_KEY,
         ipAddress,
         success: false,
       });
       return jsonError(400, "Invalid access code.");
     }
 
-    const expectedCode = getExpectedRoleCode(parsed.data.role);
-    if (!expectedCode) {
-      return jsonError(503, "Login is unavailable. Contact an administrator.");
-    }
+    const role = detectRole(code);
 
-    const isValid = secureCodeMatch(parsed.data.roleCode, expectedCode);
-    if (!isValid) {
+    if (!role) {
       await recordAuthAttempt({
         scope: "login",
-        key: limiterKey,
+        key: RATE_LIMIT_KEY,
         ipAddress,
         success: false,
       });
       return jsonError(401, "Invalid access code.");
     }
 
-    const identity = TEAM_ROLE_IDENTITIES[parsed.data.role];
+    const identity = TEAM_ROLE_IDENTITIES[role];
     const token = await signSessionToken({
       userId: identity.id,
       role: identity.role,
@@ -159,17 +128,12 @@ export async function POST(request: NextRequest) {
 
     await recordAuthAttempt({
       scope: "login",
-      key: limiterKey,
+      key: RATE_LIMIT_KEY,
       ipAddress,
       success: true,
     });
 
-    const response = NextResponse.json(
-      {
-        redirectTo: "/queue",
-      },
-      { status: 200 },
-    );
+    const response = NextResponse.json({ redirectTo: "/queue" }, { status: 200 });
 
     response.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,

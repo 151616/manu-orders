@@ -2,10 +2,11 @@
 
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { createOrderRequest } from "@/app/requests/actions";
+import { CustomSelect, type CustomSelectHandle } from "@/components/custom-select";
 import { PriorityStarsInput } from "@/components/priority-stars-input";
 import { SubmitButton } from "@/components/submit-button";
 import { FormMessage } from "@/components/form-message";
-import { ORDER_CATEGORIES, ORDER_CATEGORY_LABELS } from "@/lib/order-domain";
+import { ORDER_CATEGORIES, ORDER_CATEGORY_LABELS, ROBOTS, ROBOT_LABELS, type Robot } from "@/lib/order-domain";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
 
 type ProductAutofillResponse = {
@@ -50,7 +51,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
   const titleInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionInputRef = useRef<HTMLTextAreaElement | null>(null);
   const vendorInputRef = useRef<HTMLInputElement | null>(null);
-  const categorySelectRef = useRef<HTMLSelectElement | null>(null);
+  const categorySelectRef = useRef<CustomSelectHandle | null>(null);
   const orderUrlInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -175,7 +176,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
     if (titleInputRef.current) titleInputRef.current.value = autofillSuggestion.title;
     if (descriptionInputRef.current) descriptionInputRef.current.value = autofillSuggestion.description;
     if (vendorInputRef.current) vendorInputRef.current.value = autofillSuggestion.vendor;
-    if (categorySelectRef.current) categorySelectRef.current.value = autofillSuggestion.category;
+    if (categorySelectRef.current) categorySelectRef.current.setValue(autofillSuggestion.category);
     if (orderUrlInputRef.current) orderUrlInputRef.current.value = autofillSuggestion.normalizedUrl;
     setAutofillStatus("applied");
     setAutofillMessage("Autofill applied. Review and press submit when ready.");
@@ -212,13 +213,13 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
                 applyAutofill();
               }
             }}
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 pr-36 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 pr-36 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {autofillStatus === "loading" ? (
-            <span className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-black dark:border-white/20 dark:border-t-white" aria-hidden="true" />
+            <span className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -tranzinc-y-1/2 animate-spin rounded-full border-2 border-zinc-300 border-t-black dark:border-white/20 dark:border-t-white" aria-hidden="true" />
           ) : null}
           {autofillStatus === "ready" ? (
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 dark:text-white/35">
+            <span className="pointer-events-none absolute right-3 top-1/2 -tranzinc-y-1/2 text-xs text-black/35 dark:text-white/35">
               Press Tab to autofill
             </span>
           ) : null}
@@ -244,7 +245,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
           name="title"
           defaultValue={state.submittedValues.title ?? ""}
           placeholder="e.g. #25 Chain Sprocket"
-          className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+          className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
         />
         {state.fieldErrors.title ? (
           <p className="mt-1 text-xs text-red-600 dark:text-red-400">{state.fieldErrors.title}</p>
@@ -260,7 +261,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
           defaultValue={state.submittedValues.description ?? ""}
           rows={2}
           placeholder="Part details, specs, notes for manufacturing..."
-          className="w-full resize-none rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+          className="w-full resize-none rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
         />
       </label>
 
@@ -273,7 +274,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
           name="requesterName"
           defaultValue={state.submittedValues.requesterName ?? ""}
           placeholder="Your name"
-          className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+          className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
         />
         {state.fieldErrors.requesterName ? (
           <p className="mt-1 text-xs text-red-600 dark:text-red-400">{state.fieldErrors.requesterName}</p>
@@ -289,7 +290,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
             name="vendor"
             defaultValue={state.submittedValues.vendor ?? ""}
             placeholder="e.g. Rev Robotics"
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
         </label>
 
@@ -297,17 +298,15 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
           <span className="mb-1 block text-sm font-medium text-black/80 dark:text-white/80">
             Category <span className="text-red-500">*</span>
           </span>
-          <select
+          <CustomSelect
             ref={categorySelectRef}
             name="category"
             defaultValue={state.submittedValues.category ?? ""}
-            className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
-          >
-            <option value="">Select category</option>
-            {ORDER_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{ORDER_CATEGORY_LABELS[cat]}</option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Select category" },
+              ...ORDER_CATEGORIES.map((c) => ({ value: c, label: ORDER_CATEGORY_LABELS[c] })),
+            ]}
+          />
           {state.fieldErrors.category ? (
             <p className="mt-1 text-xs text-red-600 dark:text-red-400">{state.fieldErrors.category}</p>
           ) : null}
@@ -324,7 +323,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
             min={1}
             defaultValue={state.submittedValues.quantity ?? ""}
             placeholder="e.g. 4"
-            className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
           />
           {state.fieldErrors.quantity ? (
             <p className="mt-1 text-xs text-red-600 dark:text-red-400">{state.fieldErrors.quantity}</p>
@@ -336,6 +335,19 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
           <PriorityStarsInput name="priority" defaultValue={3} />
         </div>
       </div>
+
+      {/* Robot */}
+      <label className="block">
+        <span className="mb-1 block text-sm font-medium text-black/80 dark:text-white/80">Robot</span>
+        <CustomSelect
+          name="robot"
+          defaultValue={state.submittedValues.robot ?? ""}
+          options={[
+            { value: "", label: "Unassigned" },
+            ...ROBOTS.map((r) => ({ value: r, label: ROBOT_LABELS[r] })),
+          ]}
+        />
+      </label>
 
       <div className="flex gap-2 pt-1">
         <SubmitButton idleLabel="Submit Request" />

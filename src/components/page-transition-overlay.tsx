@@ -94,8 +94,8 @@ export function PageTransitionOverlay() {
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-white/92 px-6">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-lg">
-        <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-black" />
+      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-lg">
+        <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-zinc-200 border-t-black" />
         <p className="mt-4 text-base font-semibold text-black">Loading page...</p>
         <p className="mt-1 text-sm text-black/65">
           Please wait while we open the next screen.

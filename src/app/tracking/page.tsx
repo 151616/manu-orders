@@ -18,6 +18,7 @@ export default async function TrackingPage() {
       description: req.description,
       type: req.type as ManuRequestItem["type"],
       otherType: req.otherType,
+      robot: req.robot as ManuRequestItem["robot"],
       fileOriginalName: req.fileOriginalName,
       fileUrl: req.fileStoragePath
         ? await resolveTrackingFilePublicUrl(req.fileStoragePath)

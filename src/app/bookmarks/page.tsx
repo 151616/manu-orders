@@ -60,7 +60,7 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
 
       {canMutate ? <CreateBookmarkForm /> : null}
 
-      <div className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
         <h2 className="mb-3 text-lg font-semibold text-black dark:text-white">Websites</h2>
         {siteBookmarks.length === 0 ? (
           <p className="text-sm text-black/70 dark:text-white/70">No website bookmarks yet.</p>
@@ -73,7 +73,7 @@ export default async function BookmarksPage({ searchParams }: BookmarksPageProps
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-5 dark:border-white/10 dark:bg-white/5">
         <h2 className="mb-3 text-lg font-semibold text-black dark:text-white">Templates</h2>
         {templateBookmarks.length === 0 ? (
           <p className="text-sm text-black/70 dark:text-white/70">No template bookmarks yet.</p>

@@ -267,6 +267,34 @@ function deriveCategory(raw: string) {
   return "OTHER" as const;
 }
 
+function isAmazonHostname(hostname: string): boolean {
+  return /^(www\.)?amazon\.(com|co\.uk|ca|com\.au|de|fr|it|es|co\.jp|in|com\.br|com\.mx)$/i.test(
+    hostname,
+  );
+}
+
+function extractFromAmazonUrl(url: URL): {
+  title: string;
+  vendor: string;
+  found: boolean;
+} {
+  // URLs like /Product-Title-Slug/dp/ASIN or /dp/ASIN or /gp/product/ASIN
+  const dpSlugMatch = url.pathname.match(/^\/(.+?)\/dp\//);
+  const slug = dpSlugMatch?.[1] ?? "";
+  const title = slug
+    .replace(/[+%]+/g, " ")
+    .replace(/-+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
+
+  return {
+    title,
+    vendor: "Amazon",
+    found: title.length > 0,
+  };
+}
+
 function applyRevHeuristics({
   hostname,
   pathname,
@@ -385,6 +413,33 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const isAmazon = isAmazonHostname(targetUrl.hostname);
+  const amazonUrlData = isAmazon ? extractFromAmazonUrl(targetUrl) : null;
+
+  // Skip the fetch entirely for Amazon — their pages are too large and heavily
+  // bot-protected. Use URL slug extraction instead.
+  if (isAmazon) {
+    if (amazonUrlData?.found) {
+      const inferredCategory = deriveCategory(
+        [amazonUrlData.title, targetUrl.pathname.replace(/[-_/]+/g, " ")].join(" "),
+      );
+      const result: AutofillPayload = {
+        normalizedUrl: targetUrl.toString(),
+        title: amazonUrlData.title,
+        description: "",
+        vendor: amazonUrlData.vendor,
+        category: ORDER_CATEGORIES.includes(inferredCategory) ? inferredCategory : "OTHER",
+        source: "rev-heuristic",
+        confidence: "medium",
+      };
+      return NextResponse.json(result, { status: 200 });
+    }
+    return NextResponse.json(
+      { error: "Could not extract product info from this Amazon URL. Try pasting the full product page URL." },
+      { status: 422 },
+    );
+  }
+
   try {
     const response = await fetchWithTimeout(
       targetUrl.toString(),
@@ -393,14 +448,32 @@ export async function POST(request: NextRequest) {
         redirect: "follow",
         cache: "no-store",
         headers: {
-          Accept: "text/html,application/xhtml+xml",
-          "User-Agent": "ManuQueue-Autofill/1.1",
+          Accept: "text/html,application/xhtml+xml,*/*;q=0.9",
+          "Accept-Language": "en-US,en;q=0.9",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         },
       },
       FETCH_TIMEOUT_MS,
     );
 
     if (!response.ok) {
+      // Amazon often returns 503/403 — fall back to URL extraction
+      if (amazonUrlData?.found) {
+        const inferredCategory = deriveCategory(
+          [amazonUrlData.title, targetUrl.pathname.replace(/[-_/]+/g, " ")].join(" "),
+        );
+        const result: AutofillPayload = {
+          normalizedUrl: targetUrl.toString(),
+          title: amazonUrlData.title,
+          description: "",
+          vendor: amazonUrlData.vendor,
+          category: ORDER_CATEGORIES.includes(inferredCategory) ? inferredCategory : "OTHER",
+          source: "rev-heuristic",
+          confidence: "medium",
+        };
+        return NextResponse.json(result, { status: 200 });
+      }
       return NextResponse.json(
         { error: `Could not fetch page (HTTP ${response.status}).` },
         { status: 422 },
@@ -430,9 +503,9 @@ export async function POST(request: NextRequest) {
       extractMetaByKey(html, "name", "application-name"),
     ]);
 
-    const baseTitle = firstString([jsonLd.title, metaTitle]);
+    const baseTitle = firstString([jsonLd.title, metaTitle, amazonUrlData?.title ?? ""]);
     const baseDescription = firstString([jsonLd.description, metaDescription]);
-    const baseVendor = firstString([jsonLd.vendor, metaVendor]);
+    const baseVendor = firstString([jsonLd.vendor, metaVendor, amazonUrlData?.vendor ?? ""]);
     const baseCategoryText = firstString([
       jsonLd.category,
       extractMetaByKey(html, "property", "product:category"),
@@ -495,6 +568,23 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    // For Amazon, fall back to URL-extracted data on any fetch failure
+    if (amazonUrlData?.found) {
+      const inferredCategory = deriveCategory(
+        [amazonUrlData.title, targetUrl.pathname.replace(/[-_/]+/g, " ")].join(" "),
+      );
+      const result: AutofillPayload = {
+        normalizedUrl: targetUrl.toString(),
+        title: amazonUrlData.title,
+        description: "",
+        vendor: amazonUrlData.vendor,
+        category: ORDER_CATEGORIES.includes(inferredCategory) ? inferredCategory : "OTHER",
+        source: "rev-heuristic",
+        confidence: "medium",
+      };
+      return NextResponse.json(result, { status: 200 });
+    }
+
     if (error instanceof Error && error.name === "AbortError") {
       return NextResponse.json(
         { error: "Fetching product info timed out. Please try again." },

@@ -13,10 +13,11 @@ import { RequesterOrderForm } from "@/app/orders/[id]/requester-order-form";
 import { ActivityDropdown } from "@/app/orders/[id]/activity-dropdown";
 import { FormMessage } from "@/components/form-message";
 import { PriorityStarsDisplay } from "@/components/priority-stars-display";
+import { RobotBadge } from "@/components/robot-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { requireAuth } from "@/lib/auth";
 import { getEtaDeltaDays, getRemainingEtaDays } from "@/lib/eta";
-import { ORDER_CATEGORY_LABELS, type OrderCategory } from "@/lib/order-domain";
+import { ORDER_CATEGORY_LABELS, ROBOT_LABELS, type OrderCategory, type Robot } from "@/lib/order-domain";
 
 type OrderDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -79,7 +80,7 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
       {message ? <FormMessage tone={message.tone} message={message.message} /> : null}
 
       {/* Main detail card */}
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5">
+      <div className="space-y-4 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className={labelCls}>Order Detail</p>
@@ -92,10 +93,11 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
               </span>
             ) : null}
             {isDueSoon ? (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-white/60">
+              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:bg-white/10 dark:text-white/60">
                 DUE SOON
               </span>
             ) : null}
+            <RobotBadge robot={(order as { robot?: string | null }).robot} />
             <StatusBadge status={order.status} />
             {canMutate ? (
               <form action={removeAction}>
@@ -146,6 +148,14 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
             <p className={valueCls}>{order.vendor ?? "N/A"}</p>
           </div>
           <div>
+            <p className={labelCls}>Robot</p>
+            <p className={valueCls}>
+              {(order as { robot?: string | null }).robot
+                ? ROBOT_LABELS[(order as { robot: Robot }).robot]
+                : "Unassigned"}
+            </p>
+          </div>
+          <div>
             <p className={labelCls}>Created</p>
             <p className={valueCls}>{order.createdAt.toLocaleDateString()}</p>
           </div>
@@ -189,7 +199,7 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
       </div>
 
       {/* Attachments */}
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5">
+      <div className="space-y-3 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-black dark:text-white">Attachments</h2>
           <p className="text-sm text-black/60 dark:text-white/60">
@@ -212,7 +222,7 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
               return (
                 <li
                   key={attachment.id}
-                  className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
+                  className="flex flex-col items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5"
                 >
                   <div className="min-w-0">
                     {attachmentHref ? (

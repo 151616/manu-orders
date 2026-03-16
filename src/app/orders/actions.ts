@@ -16,8 +16,10 @@ import {
   ORDER_CATEGORIES,
   ORDER_STATUS_SORT_ORDER,
   ORDER_STATUSES,
+  ROBOTS,
   type OrderCategory,
   type OrderStatus,
+  type Robot,
 } from "@/lib/order-domain";
 import type {
   OrderCategory as PrismaOrderCategory,
@@ -42,6 +44,7 @@ type ListOrdersInput = {
   search?: string | null;
   status?: OrderStatus | "ALL" | null;
   category?: OrderCategory | "ALL" | null;
+  robot?: Robot | "ALL" | null;
 };
 
 type OrderListRedirectTarget = "queue" | "trash";
@@ -90,6 +93,7 @@ const FIELD_LABELS: Record<string, string> = {
   status: "Status",
   isDeleted: "Deleted",
   notesFromManu: "Manufacturing Notes",
+  robot: "Robot",
 };
 
 const ORDER_CREATE_ALLOWED_FIELDS = [
@@ -103,6 +107,7 @@ const ORDER_CREATE_ALLOWED_FIELDS = [
   "requesterName",
   "priority",
   "etaDays",
+  "robot",
 ] as const;
 
 const ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS = [
@@ -121,6 +126,7 @@ const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
   "etaDays",
   "status",
   "notesFromManu",
+  "robot",
 ] as const;
 
 const ORDER_ATTACHMENT_ALLOWED_FIELDS = ["attachment"] as const;
@@ -162,11 +168,13 @@ function parseRequesterFields(formData: FormData) {
 }
 
 function parseManufacturingFields(formData: FormData) {
+  const robotRaw = getNullableTrimmedString(formData.get("robot"));
   return OrderManufacturingUpdateSchema.safeParse({
     priority: getOptionalInt(formData.get("priority")),
     etaDays: getOptionalInt(formData.get("etaDays")),
     status: getTrimmedString(formData.get("status")),
     notesFromManu: getNullableTrimmedString(formData.get("notesFromManu")),
+    robot: robotRaw || null,
   });
 }
 
@@ -301,6 +309,7 @@ export async function listOrders({
   search,
   status,
   category,
+  robot,
 }: ListOrdersInput = {}) {
   await requireAuth();
 
@@ -314,6 +323,10 @@ export async function listOrders({
     category !== "ALL" &&
     ORDER_CATEGORIES.includes(category as OrderCategory)
       ? category
+      : undefined;
+  const robotFilter =
+    robot && robot !== "ALL" && ROBOTS.includes(robot as Robot)
+      ? (robot as Robot)
       : undefined;
   const whereClause: Prisma.OrderWhereInput = {
     isDeleted: false,
@@ -332,6 +345,7 @@ export async function listOrders({
     ...(categoryFilter
       ? { category: categoryFilter as PrismaOrderCategory }
       : {}),
+    ...(robotFilter ? { robot: robotFilter } : {}),
   };
 
   let orders:
@@ -643,6 +657,7 @@ export async function createOrder(
     };
   }
 
+  const robotRaw = getNullableTrimmedString(formData.get("robot"));
   const parsed = OrderCreateSchema.safeParse({
     title: getTrimmedString(formData.get("title")),
     description: getNullableTrimmedString(formData.get("description")),
@@ -654,6 +669,7 @@ export async function createOrder(
     requesterName: getTrimmedString(formData.get("requesterName")),
     priority: getOptionalInt(formData.get("priority")),
     etaDays: getOptionalInt(formData.get("etaDays")),
+    robot: robotRaw || null,
   });
 
   if (!parsed.success) {

@@ -49,3 +49,11 @@ export const ORDER_CATEGORY_LABELS: Record<OrderCategory, string> = {
   ELECTRICAL: "Electrical",
   OTHER: "Other",
 };
+
+export const ROBOTS = ["LAMBDA", "GAMMA"] as const;
+export type Robot = (typeof ROBOTS)[number];
+
+export const ROBOT_LABELS: Record<Robot, string> = {
+  LAMBDA: "Lambda",
+  GAMMA: "Gamma",
+};

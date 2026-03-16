@@ -16,7 +16,7 @@ export function PriorityStarsInput({ name, defaultValue }: PriorityStarsInputPro
   return (
     <div className="space-y-1">
       <input type="hidden" name={name} value={value} />
-      <div className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-slate-50 px-2 py-1.5 dark:border-white/10 dark:bg-white/5">
+      <div className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-zinc-50 px-2 py-1.5 dark:border-white/10 dark:bg-white/5">
         {Array.from({ length: 5 }, (_, index) => {
           const current = index + 1;
           const isFilled = current <= value;

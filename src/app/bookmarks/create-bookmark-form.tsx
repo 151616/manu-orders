@@ -6,6 +6,7 @@ import {
   createSiteBookmark,
   createTemplateBookmark,
 } from "@/app/bookmarks/actions";
+import { CustomSelect } from "@/components/custom-select";
 import { FormMessage } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
@@ -61,7 +62,7 @@ export function CreateBookmarkForm() {
       <form
         key={siteFormKey}
         action={siteAction}
-        className="space-y-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5"
+        className="space-y-4 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5"
       >
         <h2 className="text-lg font-semibold tracking-tight text-black dark:text-white">
           Add Website Bookmark
@@ -77,7 +78,7 @@ export function CreateBookmarkForm() {
               name="siteUrl"
               defaultValue={useValueFor(siteState.submittedValues, "siteUrl")}
               placeholder="https://"
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {siteState.fieldErrors.siteUrl ? (
               <p className="mt-1 text-xs text-red-600">{siteState.fieldErrors.siteUrl}</p>
@@ -89,7 +90,7 @@ export function CreateBookmarkForm() {
             <input
               name="name"
               defaultValue={useValueFor(siteState.submittedValues, "name")}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {siteState.fieldErrors.name ? (
               <p className="mt-1 text-xs text-red-600">{siteState.fieldErrors.name}</p>
@@ -102,7 +103,7 @@ export function CreateBookmarkForm() {
               name="siteVendorHint"
               defaultValue={useValueFor(siteState.submittedValues, "siteVendorHint")}
               placeholder="Optional"
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {siteState.fieldErrors.siteVendorHint ? (
               <p className="mt-1 text-xs text-red-600">{siteState.fieldErrors.siteVendorHint}</p>
@@ -120,7 +121,7 @@ export function CreateBookmarkForm() {
       <form
         key={templateFormKey}
         action={templateAction}
-        className="space-y-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5"
+        className="space-y-4 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-white/10 dark:bg-white/5"
       >
         <h2 className="text-lg font-semibold tracking-tight text-black dark:text-white">
           Add Template Bookmark
@@ -139,7 +140,7 @@ export function CreateBookmarkForm() {
             <input
               name="name"
               defaultValue={useValueFor(templateState.submittedValues, "name")}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {templateState.fieldErrors.name ? (
               <p className="mt-1 text-xs text-red-600">{templateState.fieldErrors.name}</p>
@@ -153,7 +154,7 @@ export function CreateBookmarkForm() {
             <input
               name="defaultVendor"
               defaultValue={useValueFor(templateState.submittedValues, "defaultVendor")}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {templateState.fieldErrors.defaultVendor ? (
               <p className="mt-1 text-xs text-red-600">
@@ -166,18 +167,14 @@ export function CreateBookmarkForm() {
             <span className="mb-1 block text-sm font-medium text-black dark:text-white">
               Default Category
             </span>
-            <select
+            <CustomSelect
               name="defaultCategory"
               defaultValue={useValueFor(templateState.submittedValues, "defaultCategory")}
-              className="w-full rounded-md border border-slate-300/80 bg-white px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-zinc-800 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
-            >
-              <option value="">None</option>
-              {ORDER_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {ORDER_CATEGORY_LABELS[category]}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "None" },
+                ...ORDER_CATEGORIES.map((c) => ({ value: c, label: ORDER_CATEGORY_LABELS[c] })),
+              ]}
+            />
             {templateState.fieldErrors.defaultCategory ? (
               <p className="mt-1 text-xs text-red-600">
                 {templateState.fieldErrors.defaultCategory}
@@ -193,7 +190,7 @@ export function CreateBookmarkForm() {
               name="defaultOrderUrl"
               defaultValue={useValueFor(templateState.submittedValues, "defaultOrderUrl")}
               placeholder="https://"
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {templateState.fieldErrors.defaultOrderUrl ? (
               <p className="mt-1 text-xs text-red-600">
@@ -210,7 +207,7 @@ export function CreateBookmarkForm() {
               name="defaultDescription"
               rows={3}
               defaultValue={useValueFor(templateState.submittedValues, "defaultDescription")}
-              className="w-full rounded-md border border-slate-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
             />
             {templateState.fieldErrors.defaultDescription ? (
               <p className="mt-1 text-xs text-red-600">
