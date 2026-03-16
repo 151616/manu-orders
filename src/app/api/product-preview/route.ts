@@ -358,9 +358,6 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  if (session.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
 
   let payload: unknown = null;
   try {
