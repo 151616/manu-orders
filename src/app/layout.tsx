@@ -26,11 +26,10 @@ export const metadata: Metadata = {
 };
 
 const getCachedSiteBookmarks = unstable_cache(
-  async (userLabel: string) =>
+  async () =>
     prisma.bookmark.findMany({
       where: {
         kind: "SITE",
-        createdByLabel: userLabel,
         isDeleted: false,
         siteUrl: { not: null },
       },
@@ -53,7 +52,7 @@ export default async function RootLayout({
   let pendingRequestCount = 0;
   if (user) {
     try {
-      siteBookmarks = await getCachedSiteBookmarks(user.label);
+      siteBookmarks = await getCachedSiteBookmarks();
     } catch (error) {
       console.error("[RootLayout] Failed to load site bookmarks.", error);
       siteBookmarks = [];

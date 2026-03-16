@@ -325,7 +325,6 @@ export async function listTemplateBookmarksForCurrentUser() {
       prisma.bookmark.findMany({
         where: {
           kind: "TEMPLATE",
-          createdByLabel: user.label,
           isDeleted: false,
         },
         orderBy: [{ createdAt: "desc" }],
@@ -350,7 +349,6 @@ export async function listSiteBookmarksForCurrentUser() {
       prisma.bookmark.findMany({
         where: {
           kind: "SITE",
-          createdByLabel: user.label,
           isDeleted: false,
         },
         orderBy: [{ createdAt: "desc" }],
@@ -395,7 +393,6 @@ export async function listDeletedBookmarksForCurrentUser() {
     return await withTimeout(
       prisma.bookmark.findMany({
         where: {
-          createdByLabel: user.label,
           isDeleted: true,
         },
         orderBy: [{ updatedAt: "desc" }],
@@ -425,7 +422,6 @@ export async function getBookmarkById(bookmarkId: string) {
     where: {
       id: parsedBookmarkId,
       kind: "TEMPLATE",
-      createdByLabel: user.label,
       isDeleted: false,
     },
   });
@@ -444,7 +440,6 @@ export async function getSiteBookmarkById(bookmarkId: string) {
       where: {
         id: parsedBookmarkId,
         kind: "SITE",
-        createdByLabel: user.label,
         isDeleted: false,
       },
     });
@@ -696,7 +691,6 @@ export async function updateTemplateBookmark(
       where: {
         id: parsedBookmarkId,
         kind: "TEMPLATE",
-        createdByLabel: user.label,
         isDeleted: false,
       },
     });
@@ -779,7 +773,6 @@ export async function updateSiteBookmark(
       where: {
         id: parsedBookmarkId,
         kind: "SITE",
-        createdByLabel: user.label,
         isDeleted: false,
       },
     });
@@ -871,7 +864,6 @@ export async function deleteBookmark(bookmarkId: string) {
     const existing = await prisma.bookmark.findFirst({
       where: {
         id: parsedBookmarkId,
-        createdByLabel: user.label,
         isDeleted: false,
       },
     });
@@ -919,7 +911,6 @@ export async function restoreBookmark(
     const existing = await prisma.bookmark.findFirst({
       where: {
         id: parsedBookmarkId,
-        createdByLabel: user.label,
         isDeleted: true,
       },
     });
@@ -970,7 +961,6 @@ export async function permanentlyDeleteBookmark(
     const existing = await prisma.bookmark.findFirst({
       where: {
         id: parsedBookmarkId,
-        createdByLabel: user.label,
         isDeleted: true,
       },
     });
@@ -1016,7 +1006,7 @@ export async function updateSiteBookmarkLink(
   const siteUrl = getNullableTrimmedString(formData.get("siteUrl"));
 
   const existing = await prisma.bookmark.findFirst({
-    where: { id: parsedBookmarkId, kind: "SITE", createdByLabel: user.label, isDeleted: false },
+    where: { id: parsedBookmarkId, kind: "SITE", isDeleted: false },
   });
 
   if (!existing) {
@@ -1049,7 +1039,7 @@ export async function updateTemplateBookmarkLink(
   const defaultOrderUrl = getNullableTrimmedString(formData.get("defaultOrderUrl"));
 
   const existing = await prisma.bookmark.findFirst({
-    where: { id: parsedBookmarkId, kind: "TEMPLATE", createdByLabel: user.label, isDeleted: false },
+    where: { id: parsedBookmarkId, kind: "TEMPLATE", isDeleted: false },
   });
 
   if (!existing) {
