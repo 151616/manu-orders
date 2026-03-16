@@ -117,7 +117,7 @@ export function NewTrackingRequestForm({ onSuccess, onCancel }: Props = {}) {
         ) : null}
 
         <div className="flex gap-2">
-          <SubmitButton>Submit Request</SubmitButton>
+          <SubmitButton idleLabel="Submit Request" />
           {onCancel ? (
             <button
               type="button"

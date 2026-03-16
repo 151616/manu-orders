@@ -338,7 +338,7 @@ export function NewOrderRequestForm({ onSuccess, onCancel }: Props) {
       </div>
 
       <div className="flex gap-2 pt-1">
-        <SubmitButton>Submit Request</SubmitButton>
+        <SubmitButton idleLabel="Submit Request" />
         {onCancel ? (
           <button
             type="button"

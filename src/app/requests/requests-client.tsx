@@ -220,7 +220,7 @@ function OrderRequestCard({
           <input type="hidden" name="orderUrl" value={req.orderUrl ?? ""} />
 
           <div className="flex gap-2 pt-1">
-            <SubmitButton>Save Changes</SubmitButton>
+            <SubmitButton idleLabel="Save Changes" />
             <button
               type="button"
               onClick={() => setEditing(false)}
@@ -406,7 +406,7 @@ function TrackingRequestCard({
           ) : null}
 
           <div className="flex gap-2 pt-1">
-            <SubmitButton>Save Changes</SubmitButton>
+            <SubmitButton idleLabel="Save Changes" />
             <button
               type="button"
               onClick={() => setEditing(false)}
