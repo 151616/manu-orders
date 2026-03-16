@@ -38,7 +38,7 @@ export function NewTrackingRequestForm({ onSuccess, onCancel }: Props = {}) {
       </div>
 
       {state.success ? (
-        <FormMessage type="success" message={state.success} />
+        <FormMessage tone="success" message={state.success} />
       ) : null}
 
       <form
@@ -47,7 +47,7 @@ export function NewTrackingRequestForm({ onSuccess, onCancel }: Props = {}) {
         className="space-y-4 rounded-xl border border-slate-200/80 bg-white/95 p-5 shadow-sm dark:border-white/10 dark:bg-white/5"
       >
         {state.error ? (
-          <FormMessage type="error" message={state.error} />
+          <FormMessage tone="error" message={state.error} />
         ) : null}
 
         <label className="block">
