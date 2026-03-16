@@ -14,7 +14,7 @@ export function PriorityStarsDisplay({
 
   return (
     <span
-      className={className ?? "text-base tracking-wide text-amber-500"}
+      className={className ?? "text-base tracking-wide text-black dark:text-white"}
       aria-hidden="true"
     >
       {Array.from({ length: 5 }, (_, index) =>

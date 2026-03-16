@@ -92,7 +92,7 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
               </span>
             ) : null}
             {isDueSoon ? (
-              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:bg-amber-900/30 dark:text-amber-300">
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-white/60">
                 DUE SOON
               </span>
             ) : null}
@@ -120,7 +120,7 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
             {isOverdue ? (
               <p className="text-sm font-medium text-red-700">Overdue by {Math.abs(etaDelta)} day(s)</p>
             ) : isDueSoon ? (
-              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Due in {etaRemaining} day(s)</p>
+              <p className="text-sm font-medium text-black/70 dark:text-white/60">Due in {etaRemaining} day(s)</p>
             ) : (
               <p className={valueCls}>{etaRemaining} day(s)</p>
             )}
@@ -168,7 +168,7 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
                 href={order.orderUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="break-all text-sm text-indigo-600 underline underline-offset-2 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                className="break-all text-sm text-black/60 underline underline-offset-2 hover:text-black dark:text-white/60 dark:hover:text-white"
               >
                 {order.orderUrl}
               </a>
@@ -220,7 +220,7 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
                         href={attachmentHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="truncate text-sm font-medium text-indigo-600 underline underline-offset-2 hover:text-indigo-800 dark:text-indigo-400"
+                        className="truncate text-sm font-medium text-black/60 underline underline-offset-2 hover:text-black dark:text-white/60"
                       >
                         {attachment.originalName}
                       </a>

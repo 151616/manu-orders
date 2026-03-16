@@ -92,7 +92,7 @@ export function PageProgressBar() {
         className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px] overflow-hidden"
       >
         <div
-          className="h-full w-full bg-indigo-500"
+          className="h-full w-full bg-black dark:bg-white"
           style={
             phase === "active"
               ? {

@@ -45,9 +45,9 @@ enum RequestStatus {
 }
 
 model Order {
-  id               String        @id @default(uuid())
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id               String            @id @default(uuid())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
   title            String
   description      String?
   requesterName    String
@@ -57,11 +57,11 @@ model Order {
   orderUrl         String?
   quantity         Int?
   category         OrderCategory
-  priority         Int           @default(3)
-  etaDays          Int           @default(10)
+  priority         Int               @default(3)
+  etaDays          Int               @default(10)
   etaTargetDate    DateTime?
-  status           OrderStatus   @default(NEW)
-  isDeleted        Boolean       @default(false)
+  status           OrderStatus       @default(NEW)
+  isDeleted        Boolean           @default(false)
   notesFromManu    String?
   createdByLabel   String?
   activities       OrderActivity[]
@@ -78,7 +78,7 @@ model Bookmark {
   defaultOrderUrl    String?
   defaultCategory    OrderCategory?
   defaultDescription String?
-  isDeleted          Boolean       @default(false)
+  isDeleted          Boolean        @default(false)
   createdByLabel     String
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt

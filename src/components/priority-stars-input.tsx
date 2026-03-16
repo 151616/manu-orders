@@ -27,8 +27,8 @@ export function PriorityStarsInput({ name, defaultValue }: PriorityStarsInputPro
               onClick={() => setValue(current)}
               className={
                 isFilled
-                  ? "rounded-md px-1 py-0.5 text-2xl leading-none text-amber-500 transition hover:scale-110"
-                  : "rounded-md px-1 py-0.5 text-2xl leading-none text-slate-300 transition hover:scale-110 hover:text-amber-400 dark:text-white/25"
+                  ? "rounded-md px-1 py-0.5 text-2xl leading-none text-black transition hover:scale-110 dark:text-white"
+                  : "rounded-md px-1 py-0.5 text-2xl leading-none text-black/20 transition hover:scale-110 hover:text-black dark:text-white/25 dark:hover:text-white"
               }
               aria-label={`Set priority to ${current}`}
             >

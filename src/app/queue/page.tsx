@@ -103,12 +103,12 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
       {showUndo && undoRemoveAction ? (
         <form
           action={undoRemoveAction}
-          className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-500/30 dark:bg-amber-900/20 dark:text-amber-200"
+          className="flex flex-col gap-2 rounded-md border border-black/15 bg-black/5 px-4 py-3 text-sm text-black sm:flex-row sm:items-center sm:justify-between dark:border-white/15 dark:bg-white/5 dark:text-white"
         >
           <p>Order moved to trash. Undo?</p>
           <button
             type="submit"
-            className="w-full rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 sm:w-auto dark:border-amber-500/40 dark:bg-transparent dark:text-amber-200 dark:hover:bg-amber-900/30"
+            className="w-full rounded-md border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
           >
             Restore
           </button>
@@ -136,7 +136,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
           ) : (
             <Link
               href="/requests?open=order"
-              className="w-full rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto"
+              className="w-full rounded-lg border border-black bg-black px-3 py-2 text-center text-sm font-semibold text-white hover:bg-black/85 sm:w-auto dark:border-white dark:bg-white dark:text-black dark:hover:bg-white/85"
             >
               + Request a Part
             </Link>
@@ -182,7 +182,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                   isOverdue
                     ? "space-y-3 rounded-xl border border-red-200 bg-red-50/95 p-4 shadow-sm transition hover:border-red-300 hover:shadow-md dark:border-red-500/30 dark:bg-red-900/20 dark:hover:border-red-500/50"
                     : isDueSoon
-                      ? "space-y-3 rounded-xl border border-amber-200 bg-amber-50/95 p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-amber-500/30 dark:bg-amber-900/20 dark:hover:border-amber-500/50"
+                      ? "space-y-3 rounded-xl border border-slate-300 bg-slate-50/95 p-4 shadow-sm transition hover:border-slate-400 hover:shadow-md dark:border-white/15 dark:bg-white/5 dark:hover:border-white/25"
                       : "space-y-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
                 }
               >
@@ -195,7 +195,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       {isCompact && isOverdue ? (
                         <span className="text-xs font-semibold text-red-600 dark:text-red-400">OVERDUE</span>
                       ) : isCompact && isDueSoon ? (
-                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">DUE SOON</span>
+                        <span className="text-xs font-semibold text-black/60 dark:text-white/60">DUE SOON</span>
                       ) : null}
                       <StatusBadge status={order.status} />
                     </div>
@@ -218,7 +218,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                             Overdue by {Math.abs(etaDelta)} day(s)
                           </p>
                         ) : isDueSoon ? (
-                          <p className="font-medium text-amber-900">
+                          <p className="font-medium text-black dark:text-white">
                             Due in {etaRemaining} day(s)
                           </p>
                         ) : (

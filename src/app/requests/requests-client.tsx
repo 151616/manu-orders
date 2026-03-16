@@ -62,14 +62,14 @@ export type SerializedTrackingRequest = {
 function StatusBadge({ status }: { status: RequestStatus }) {
   if (status === "PENDING") {
     return (
-      <span className="inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+      <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/60">
         Pending
       </span>
     );
   }
   if (status === "APPROVED") {
     return (
-      <span className="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/30 dark:text-green-300">
+      <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-white/60">
         Approved
       </span>
     );
@@ -125,7 +125,7 @@ function OrderRequestCard({
 
   if (editing) {
     return (
-      <div className="space-y-4 rounded-xl border border-indigo-200 bg-white/95 p-4 shadow-sm dark:border-indigo-500/30 dark:bg-white/5">
+      <div className="space-y-4 rounded-xl border border-black/15 bg-white/95 p-4 shadow-sm dark:border-white/15 dark:bg-white/5">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-black dark:text-white">Edit Request</p>
           <span className="text-xs text-black/40 dark:text-white/40">{secondsLeft}s left</span>
@@ -261,7 +261,7 @@ function OrderRequestCard({
           href={req.orderUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block text-xs text-indigo-600 underline underline-offset-2 hover:no-underline dark:text-indigo-400"
+          className="inline-block text-xs text-black/60 underline underline-offset-2 hover:no-underline dark:text-white/60"
         >
           View order link ↗
         </a>
@@ -281,7 +281,7 @@ function OrderRequestCard({
           <form action={approveOrderRequest.bind(null, req.id)}>
             <button
               type="submit"
-              className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+              className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 dark:bg-white dark:text-black dark:hover:bg-white/85"
             >
               Approve → Create Order
             </button>
@@ -337,7 +337,7 @@ function TrackingRequestCard({
 
   if (editing) {
     return (
-      <div className="space-y-4 rounded-xl border border-indigo-200 bg-white/95 p-4 shadow-sm dark:border-indigo-500/30 dark:bg-white/5">
+      <div className="space-y-4 rounded-xl border border-black/15 bg-white/95 p-4 shadow-sm dark:border-white/15 dark:bg-white/5">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-black dark:text-white">Edit Request</p>
           <span className="text-xs text-black/40 dark:text-white/40">{secondsLeft}s left</span>
@@ -448,7 +448,7 @@ function TrackingRequestCard({
           <form action={approveTrackingRequest.bind(null, req.id)}>
             <button
               type="submit"
-              className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+              className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 dark:bg-white dark:text-black dark:hover:bg-white/85"
             >
               Approve → Add to Tracking
             </button>
@@ -555,28 +555,28 @@ function ViewerStatusToast({
       ? "border-green-200 dark:border-green-500/30"
       : tone === "rejected"
         ? "border-red-200 dark:border-red-500/30"
-        : "border-amber-200 dark:border-amber-500/30";
+        : "border-black/15 dark:border-white/15";
 
   const textCls =
     tone === "approved"
       ? "text-green-900 dark:text-green-200"
       : tone === "rejected"
         ? "text-red-900 dark:text-red-200"
-        : "text-amber-900 dark:text-amber-200";
+        : "text-black dark:text-white";
 
   const barCls =
     tone === "approved"
       ? "bg-green-500 dark:bg-green-400"
       : tone === "rejected"
         ? "bg-red-500 dark:bg-red-400"
-        : "bg-amber-500 dark:bg-amber-400";
+        : "bg-black dark:bg-white";
 
   const trackCls =
     tone === "approved"
       ? "bg-green-100 dark:bg-green-900/40"
       : tone === "rejected"
         ? "bg-red-100 dark:bg-red-900/40"
-        : "bg-amber-100 dark:bg-amber-900/40";
+        : "bg-black/10 dark:bg-white/10";
 
   return (
     <div

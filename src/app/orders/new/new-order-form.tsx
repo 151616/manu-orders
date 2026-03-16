@@ -598,7 +598,7 @@ export function NewOrderForm({ defaults }: NewOrderFormProps) {
               type="button"
               onClick={applyExtensionCapture}
               disabled={!latestCapture}
-              className="rounded-md border border-indigo-600 bg-indigo-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-black bg-black px-2 py-1 text-[11px] font-semibold text-white hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white dark:bg-white dark:text-black dark:hover:bg-white/85"
             >
               Use Latest Capture
             </button>

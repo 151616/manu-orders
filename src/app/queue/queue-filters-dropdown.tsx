@@ -40,7 +40,7 @@ export function QueueFiltersDropdown({ search, status, category, isCompact }: Pr
         <span className="text-sm font-semibold text-black dark:text-white">
           Search & Filters
           {hasActiveFilters ? (
-            <span className="ml-2 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+            <span className="ml-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-white/60">
               Active
             </span>
           ) : null}
@@ -116,7 +116,7 @@ export function QueueFiltersDropdown({ search, status, category, isCompact }: Pr
             <div className="flex flex-col gap-2 sm:col-span-4 sm:flex-row sm:items-center">
               <button
                 type="submit"
-                className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 sm:w-auto"
+                className="w-full rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-black/85 sm:w-auto dark:bg-white dark:text-black dark:hover:bg-white/85"
               >
                 Apply
               </button>
