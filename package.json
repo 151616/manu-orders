@@ -8,12 +8,13 @@
   "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "build": "prisma generate && next build",
+    "build": "npx tsx scripts/add-pending-order.ts; prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "prisma db seed"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "bcryptjs": "^3.0.3",

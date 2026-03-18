@@ -8,7 +8,7 @@ export const SESSION_AUDIENCE =
   process.env.SESSION_AUDIENCE ?? "manuqueue-users";
 const SESSION_ALGORITHMS = ["HS256"];
 
-export const USER_ROLES = ["VIEWER", "ADMIN"] as const;
+export const USER_ROLES = ["MEMBER", "ADMIN"] as const;
 export type UserRoleValue = (typeof USER_ROLES)[number];
 
 export type SessionPayload = JWTPayload & {

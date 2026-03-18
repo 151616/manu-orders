@@ -16,6 +16,11 @@ const CONTENT_SECURITY_POLICY = [
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["firebase-admin"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "100mb",
+    },
+  },
   async headers() {
     return [
       {

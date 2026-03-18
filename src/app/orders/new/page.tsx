@@ -71,7 +71,7 @@ export default async function NewOrderPage({ searchParams }: NewOrderPageProps) 
         />
       ) : (
         <div className="rounded-lg border border-black/10 bg-white p-6 text-sm text-black/75">
-          VIEWER access is read-only. Order creation is only available to ADMIN.
+          Member access is read-only. Order creation is only available to Admin.
         </div>
       )}
     </section>

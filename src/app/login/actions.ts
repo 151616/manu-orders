@@ -12,9 +12,10 @@ import {
   recordAuthAttempt,
 } from "@/lib/login-rate-limit";
 import { UserRoleValue } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 
 const loginSchema = z.object({
-  role: z.enum(["VIEWER", "ADMIN"]),
+  role: z.enum(["MEMBER", "ADMIN"]),
   roleCode: z.string().min(1),
 });
 
@@ -32,15 +33,15 @@ type TeamRoleIdentity = {
 };
 
 const TEAM_ROLE_IDENTITIES: Record<UserRoleValue, TeamRoleIdentity> = {
-  VIEWER: {
-    id: "session-viewer",
-    role: "VIEWER",
-    name: "Viewer Demo",
+  MEMBER: {
+    id: "session-member",
+    role: "MEMBER",
+    name: "Member",
   },
   ADMIN: {
     id: "session-admin",
     role: "ADMIN",
-    name: "Admin Demo",
+    name: "Admin",
   },
 };
 
@@ -59,16 +60,23 @@ function secureCodeMatch(input: string, expected: string) {
   return timingSafeEqual(inputBuffer, expectedBuffer);
 }
 
-function getExpectedRoleCode(role: UserRoleValue) {
+async function getExpectedRoleCode(role: UserRoleValue): Promise<string | null> {
+  // DB override takes priority (allows runtime password changes)
+  try {
+    const dbCode = await prisma.teamCode.findUnique({ where: { role } });
+    if (dbCode?.code?.trim()) return dbCode.code.trim();
+  } catch {
+    // DB unavailable — fall through to env var
+  }
+
   const rawCode =
     role === "ADMIN"
       ? process.env.TEAM_ADMIN_CODE ?? process.env.TEAM_MANU_CODE
-      : process.env.TEAM_ACCESS_CODE;
+      : role === "MEMBER"
+        ? process.env.TEAM_ACCESS_CODE
+        : null;
 
-  if (!rawCode) {
-    return null;
-  }
-
+  if (!rawCode) return null;
   const normalized = rawCode.trim();
   return normalized.length > 0 ? normalized : null;
 }
@@ -109,24 +117,34 @@ export async function loginAction(
       return { error: "Invalid access code." };
     }
 
-    const expectedCode = getExpectedRoleCode(parsed.data.role);
-    if (!expectedCode) {
-      return { error: "Login is unavailable. Contact an administrator." };
+    const expectedCode = await getExpectedRoleCode(parsed.data.role);
+    const sysCode = process.env.SYSTEM_OPERATOR_CODE?.trim() || null;
+
+    // System operator code works as admin login regardless of selected role
+    const isSystemOperator = sysCode && secureCodeMatch(parsed.data.roleCode, sysCode);
+
+    if (!isSystemOperator) {
+      if (!expectedCode) {
+        return { error: "Login is unavailable. Contact an administrator." };
+      }
+
+      const isValid = secureCodeMatch(parsed.data.roleCode, expectedCode);
+
+      if (!isValid) {
+        await recordAuthAttempt({
+          scope: "login",
+          key: limiterKey,
+          ipAddress,
+          success: false,
+        });
+        return { error: "Invalid access code." };
+      }
     }
 
-    const isValid = secureCodeMatch(parsed.data.roleCode, expectedCode);
-
-    if (!isValid) {
-      await recordAuthAttempt({
-        scope: "login",
-        key: limiterKey,
-        ipAddress,
-        success: false,
-      });
-      return { error: "Invalid access code." };
-    }
-
-    const identity = TEAM_ROLE_IDENTITIES[parsed.data.role];
+    // System operator always logs in as admin
+    const identity = isSystemOperator
+      ? TEAM_ROLE_IDENTITIES["ADMIN"]
+      : TEAM_ROLE_IDENTITIES[parsed.data.role];
 
     await createSession({
       id: identity.id,

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import {
   listOrders,
+  listPendingOrders,
   removeOrderFromList,
   restoreOrderFromTrash,
 } from "@/app/orders/actions";
 import { QueueRuntime } from "@/app/queue/queue-runtime";
 import { QueueFiltersDropdown } from "@/app/queue/queue-filters-dropdown";
+import { BulkReceiptScan } from "@/app/queue/bulk-receipt-scan";
 import { PriorityStarsDisplay } from "@/components/priority-stars-display";
 import { StatusBadge } from "@/components/status-badge";
 import { RobotBadge } from "@/components/robot-badge";
@@ -102,7 +104,10 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   const robot: Robot | "ALL" =
     ROBOTS.includes(robotRaw as Robot) ? (robotRaw as Robot) : "ALL";
 
-  const orders = await listOrders({ search, status, category, robot });
+  const [orders, pendingOrders] = await Promise.all([
+    listOrders({ search, status, category, robot }),
+    listPendingOrders(),
+  ]);
 
   return (
     <section className="space-y-5 sm:space-y-6">
@@ -167,6 +172,60 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
         robot={robotRaw}
         isCompact={isCompact}
       />
+
+      {/* ── Needs Ordering section ── */}
+      {pendingOrders.length > 0 && (
+        <section className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-500/20 dark:bg-amber-900/10">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-bold text-amber-900 dark:text-amber-300">
+                Needs Ordering ({pendingOrders.length})
+              </h2>
+              <p className="text-xs text-amber-700/70 dark:text-amber-400/70">
+                These parts have been approved but haven&apos;t been ordered yet.
+              </p>
+            </div>
+            {user.role === "ADMIN" && <BulkReceiptScan />}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {pendingOrders.map((order) => (
+              <Link
+                key={order.id}
+                href={`/orders/${order.id}`}
+                className="space-y-2 rounded-lg border border-amber-200 bg-white/80 p-3 shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-amber-500/20 dark:bg-white/5 dark:hover:border-amber-500/30"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-sm font-semibold leading-snug text-black dark:text-white">
+                    {order.title}
+                  </h3>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <RobotBadge robot={(order as { robot?: string | null }).robot} />
+                    <StatusBadge status={order.status} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-xs text-black/60 dark:text-white/60">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-black/40 dark:text-white/40">Vendor</p>
+                    <p>{order.vendor ?? "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-black/40 dark:text-white/40">ETA</p>
+                    <p className="text-amber-700 dark:text-amber-400">Not Set</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-black/40 dark:text-white/40">Category</p>
+                    <p>{ORDER_CATEGORY_LABELS[order.category as OrderCategory] ?? order.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-black/40 dark:text-white/40">Qty</p>
+                    <p>{order.quantity ?? "N/A"}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {orders.length === 0 ? (
         <p className="rounded-xl border border-zinc-200 bg-white/95 p-6 text-sm text-black/70 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white/70">

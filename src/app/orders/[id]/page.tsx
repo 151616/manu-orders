@@ -11,6 +11,7 @@ import { OrderAttachmentUploadForm } from "@/app/orders/[id]/order-attachment-up
 import { ManufacturingOrderForm } from "@/app/orders/[id]/manufacturing-order-form";
 import { RequesterOrderForm } from "@/app/orders/[id]/requester-order-form";
 import { ActivityDropdown } from "@/app/orders/[id]/activity-dropdown";
+import { ReceiptScanPanel } from "@/app/orders/[id]/receipt-scan-panel";
 import { FormMessage } from "@/components/form-message";
 import { PriorityStarsDisplay } from "@/components/priority-stars-display";
 import { RobotBadge } from "@/components/robot-badge";
@@ -186,15 +187,26 @@ export default async function OrderDetailPage({ params, searchParams }: OrderDet
           ) : null}
         </div>
 
-        {order.orderUrl ? (
-          <Link
-            href={order.orderUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full justify-center rounded-lg border border-black/20 px-4 py-2 text-sm font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:text-white dark:hover:bg-white/10"
-          >
-            Open Vendor Link
-          </Link>
+        <div className="flex flex-wrap gap-2">
+          {order.orderUrl ? (
+            <Link
+              href={order.orderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full justify-center rounded-lg border border-black/20 px-4 py-2 text-sm font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:text-white dark:hover:bg-white/10"
+            >
+              Open Vendor Link
+            </Link>
+          ) : null}
+        </div>
+
+        {canMutate && order.status === "PENDING_ORDER" ? (
+          <div className="border-t border-zinc-200 pt-4 dark:border-white/10">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
+              Mark as Ordered
+            </p>
+            <ReceiptScanPanel orderId={order.id} />
+          </div>
         ) : null}
       </div>
 

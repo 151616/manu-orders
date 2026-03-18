@@ -16,6 +16,7 @@ enum OrderCategory {
 }
 
 enum OrderStatus {
+  PENDING_ORDER
   NEW
   QUEUED
   IN_PROGRESS
@@ -192,6 +193,40 @@ model TrackingRequest {
 
   @@index([status, createdAt])
   @@index([submittedByLabel, createdAt])
+}
+
+enum MemberSubteam {
+  ASSEMBLY
+  ELECTRICAL
+  MANUFACTURING
+  BUSINESS
+  OTHER
+}
+
+enum MemberPosition {
+  MEMBER
+  LOWER_LEADERSHIP
+  UPPER_LEADERSHIP
+  ADMIN
+}
+
+model Member {
+  id        String         @id @default(uuid())
+  firstName String
+  lastName  String
+  subteam   MemberSubteam
+  position  MemberPosition
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([firstName, lastName])
+}
+
+model TeamCode {
+  role           String   @id
+  code           String
+  updatedAt      DateTime @updatedAt
+  updatedByLabel String?
 }
 
 model LoginAttempt {

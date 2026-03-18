@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useActionState, useMemo, useCallback } from "react";
+import { useState, useEffect, useActionState, useMemo, useCallback, useTransition, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { NewOrderRequestForm } from "@/app/requests/new-order/new-order-request-form";
 import { NewTrackingRequestForm } from "@/app/requests/new-tracking/new-tracking-request-form";
@@ -8,10 +8,12 @@ import {
   updateOrderRequest,
   updateTrackingRequest,
   approveOrderRequest,
+  approveOrderRequestForm,
   rejectOrderRequest,
   approveTrackingRequest,
   rejectTrackingRequest,
 } from "@/app/requests/actions";
+import { scanReceiptForOrder } from "@/app/orders/receipt-scan-actions";
 import { ORDER_CATEGORIES, ORDER_CATEGORY_LABELS } from "@/lib/order-domain";
 import { CustomSelect } from "@/components/custom-select";
 import { PriorityStarsInput } from "@/components/priority-stars-input";
@@ -117,9 +119,46 @@ function OrderRequestCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [rejecting, setRejecting] = useState(false);
+  const [approveScanOpen, setApproveScanOpen] = useState(false);
+  const [approveState, setApproveState] = useState<
+    | null
+    | { phase: "approving" }
+    | { phase: "scanning" }
+    | { phase: "done"; orderNumber: string | null }
+    | { phase: "error"; error: string }
+  >(null);
+  const [approvePending, startApprove] = useTransition();
+  const receiptFileRef = useRef<HTMLInputElement>(null);
   const secondsLeft = useCountdown(req.createdAt);
   const boundUpdate = useMemo(() => updateOrderRequest.bind(null, req.id), [req.id]);
   const [editState, editAction] = useActionState(boundUpdate, EMPTY_FORM_STATE);
+
+  function handleApproveWithScan(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    startApprove(async () => {
+      setApproveState({ phase: "approving" });
+      const result = await approveOrderRequest(req.id);
+      if (!result.orderId) {
+        setApproveState({ phase: "error", error: "Could not create order." });
+        return;
+      }
+      const file = fd.get("receipt");
+      if (file instanceof File && file.size > 0) {
+        setApproveState({ phase: "scanning" });
+        const scanFd = new FormData();
+        scanFd.set("receipt", file);
+        const scanResult = await scanReceiptForOrder(result.orderId, scanFd);
+        if (!scanResult.ok) {
+          setApproveState({ phase: "error", error: scanResult.error });
+          return;
+        }
+        setApproveState({ phase: "done", orderNumber: scanResult.orderNumber });
+      } else {
+        setApproveState({ phase: "done", orderNumber: null });
+      }
+    });
+  }
 
   useEffect(() => {
     if (editState.success) setEditing(false);
@@ -280,7 +319,22 @@ function OrderRequestCard({
 
       {isAdmin ? (
         <div className="border-t border-black/10 pt-3 dark:border-white/10">
-          {rejecting ? (
+          {/* Done state after approve+scan */}
+          {approveState?.phase === "done" ? (
+            <div className="space-y-1">
+              <p className="text-xs text-green-700 dark:text-green-400">
+                ✓ Order created as <span className="font-semibold">Yet to be Placed</span>.
+                {approveState.orderNumber
+                  ? <> Order number <span className="font-semibold">{approveState.orderNumber}</span> applied — moved to <span className="font-semibold">New</span>.</>
+                  : " Upload a receipt from the Queue page to mark it as ordered."}
+              </p>
+            </div>
+          ) : approveState?.phase === "error" ? (
+            <div className="space-y-2">
+              <p className="text-xs text-red-600 dark:text-red-400">Error: {approveState.error}</p>
+              <button type="button" onClick={() => setApproveState(null)} className="text-xs text-red-600/70 underline dark:text-red-400/70">Try again</button>
+            </div>
+          ) : rejecting ? (
             <form action={rejectOrderRequest.bind(null, req.id)} className="space-y-2">
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-black/70 dark:text-white/70">
@@ -310,9 +364,42 @@ function OrderRequestCard({
                 </button>
               </div>
             </form>
+          ) : approveScanOpen ? (
+            <form onSubmit={handleApproveWithScan} className="space-y-3">
+              <p className="text-xs text-black/60 dark:text-white/60">
+                Optionally attach the receipt now to auto-fill the order number and mark it as ordered.
+              </p>
+              <input
+                ref={receiptFileRef}
+                type="file"
+                name="receipt"
+                accept="image/*,application/pdf"
+                className="block w-full text-xs text-black/70 file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-black/70 hover:file:bg-zinc-200 dark:text-white/70 dark:file:bg-white/10 dark:file:text-white/70"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={approvePending}
+                  className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-white/85"
+                >
+                  {approveState?.phase === "approving"
+                    ? "Creating order…"
+                    : approveState?.phase === "scanning"
+                    ? "Scanning receipt…"
+                    : "Approve & Apply Receipt"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setApproveScanOpen(false)}
+                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-black/60 hover:bg-black/5 dark:border-white/20 dark:text-white/60 dark:hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           ) : (
-            <div className="flex gap-2">
-              <form action={approveOrderRequest.bind(null, req.id)}>
+            <div className="flex flex-wrap gap-2">
+              <form action={approveOrderRequestForm.bind(null, req.id)}>
                 <button
                   type="submit"
                   className="rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-black/85 dark:bg-white dark:text-black dark:hover:bg-white/85"
@@ -320,6 +407,13 @@ function OrderRequestCard({
                   Approve → Create Order
                 </button>
               </form>
+              <button
+                type="button"
+                onClick={() => setApproveScanOpen(true)}
+                className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/30"
+              >
+                📄 Approve + Scan Receipt
+              </button>
               <button
                 type="button"
                 onClick={() => setRejecting(true)}

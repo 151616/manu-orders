@@ -130,7 +130,7 @@ const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
 ] as const;
 
 const ORDER_ATTACHMENT_ALLOWED_FIELDS = ["attachment"] as const;
-const ORDER_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+const ORDER_ATTACHMENT_MAX_BYTES = 100 * 1024 * 1024;
 const LIST_ORDERS_TIMEOUT_MS = 5000;
 
 async function withTimeout<T>(
@@ -341,7 +341,7 @@ export async function listOrders({
       : {}),
     ...(statusFilter
       ? { status: statusFilter as PrismaOrderStatus }
-      : { status: { not: "CANCELLED" as PrismaOrderStatus } }),
+      : { status: { notIn: ["CANCELLED", "PENDING_ORDER"] as PrismaOrderStatus[] } }),
     ...(categoryFilter
       ? { category: categoryFilter as PrismaOrderCategory }
       : {}),
@@ -380,6 +380,22 @@ export async function listOrders({
 
     return a.createdAt.getTime() - b.createdAt.getTime();
   });
+}
+
+export async function listPendingOrders() {
+  await requireAuth();
+  try {
+    return await withTimeout(
+      prisma.order.findMany({
+        where: { status: "PENDING_ORDER", isDeleted: false },
+        orderBy: [{ createdAt: "asc" }],
+      }),
+      LIST_ORDERS_TIMEOUT_MS,
+      "listPendingOrders query timed out.",
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function listDeletedOrders() {
@@ -511,7 +527,7 @@ export async function uploadOrderAttachment(
       success: null,
       error: "File is too large.",
       fieldErrors: {
-        attachment: "Attachment must be 10MB or smaller.",
+        attachment: "Attachment must be 100MB or smaller.",
       },
       submittedValues,
     };
@@ -816,10 +832,28 @@ export async function updateOrderRequesterFields(
       parsed.data,
     );
 
+    // Auto-flip from PENDING_ORDER → NEW when an order number is provided
+    const isFlippingToNew =
+      existing.status === "PENDING_ORDER" &&
+      parsed.data.orderNumber != null &&
+      parsed.data.orderNumber.trim().length > 0;
+
     await prisma.order.update({
       where: { id: parsedOrderId },
-      data: parsed.data,
+      data: {
+        ...parsed.data,
+        ...(isFlippingToNew
+          ? {
+              status: "NEW",
+              etaTargetDate: addDays(new Date(), existing.etaDays),
+            }
+          : {}),
+      },
     });
+
+    if (isFlippingToNew) {
+      diffs.push({ field: "status", from: "PENDING_ORDER", to: "NEW" });
+    }
 
     await createOrderActivity({
       orderId: parsedOrderId,

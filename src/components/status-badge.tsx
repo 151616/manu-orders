@@ -1,6 +1,7 @@
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/order-domain";
 
 const statusClassMap: Record<OrderStatus, string> = {
+  PENDING_ORDER: "bg-amber-100 text-amber-800 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-500/30",
   NEW: "bg-zinc-100 text-zinc-600 ring-zinc-200 dark:bg-white/10 dark:text-white/60 dark:ring-white/15",
   QUEUED: "bg-zinc-900 text-white ring-zinc-700 dark:bg-white dark:text-black dark:ring-white/60",
   IN_PROGRESS: "bg-zinc-600 text-white ring-zinc-500 dark:bg-white/70 dark:text-black dark:ring-white/40",

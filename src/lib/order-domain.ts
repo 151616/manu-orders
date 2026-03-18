@@ -10,6 +10,7 @@ export const ORDER_CATEGORIES = [
 export type OrderCategory = (typeof ORDER_CATEGORIES)[number];
 
 export const ORDER_STATUSES = [
+  "PENDING_ORDER",
   "NEW",
   "QUEUED",
   "IN_PROGRESS",
@@ -22,6 +23,7 @@ export const ORDER_STATUSES = [
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  PENDING_ORDER: "Yet to be Placed",
   NEW: "New",
   QUEUED: "Queued",
   IN_PROGRESS: "In Progress",
@@ -32,13 +34,14 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 export const ORDER_STATUS_SORT_ORDER: Record<OrderStatus, number> = {
-  IN_PROGRESS: 0,
-  QUEUED: 1,
-  NEW: 2,
-  WAITING_ON_PARTS: 3,
-  BLOCKED: 4,
-  DONE: 5,
-  CANCELLED: 6,
+  PENDING_ORDER: 0,
+  IN_PROGRESS: 1,
+  QUEUED: 2,
+  NEW: 3,
+  WAITING_ON_PARTS: 4,
+  BLOCKED: 5,
+  DONE: 6,
+  CANCELLED: 7,
 };
 
 export const ORDER_CATEGORY_LABELS: Record<OrderCategory, string> = {

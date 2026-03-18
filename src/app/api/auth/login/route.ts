@@ -19,15 +19,15 @@ type TeamRoleIdentity = {
 };
 
 const TEAM_ROLE_IDENTITIES: Record<UserRoleValue, TeamRoleIdentity> = {
-  VIEWER: {
-    id: "session-viewer",
-    role: "VIEWER",
-    name: "Viewer Demo",
+  MEMBER: {
+    id: "session-member",
+    role: "MEMBER",
+    name: "Member",
   },
   ADMIN: {
     id: "session-admin",
     role: "ADMIN",
-    name: "Admin Demo",
+    name: "Admin",
   },
 };
 
@@ -50,11 +50,15 @@ function getExpectedRoleCode(role: UserRoleValue) {
   return normalized.length > 0 ? normalized : null;
 }
 
+
+
 function detectRole(code: string): UserRoleValue | null {
+  const sysCode = process.env.SYSTEM_OPERATOR_CODE?.trim();
+  if (sysCode && secureCodeMatch(code, sysCode)) return "ADMIN";
   const adminCode = getExpectedRoleCode("ADMIN");
   if (adminCode && secureCodeMatch(code, adminCode)) return "ADMIN";
-  const viewerCode = getExpectedRoleCode("VIEWER");
-  if (viewerCode && secureCodeMatch(code, viewerCode)) return "VIEWER";
+  const memberCode = getExpectedRoleCode("MEMBER");
+  if (memberCode && secureCodeMatch(code, memberCode)) return "MEMBER";
   return null;
 }
 

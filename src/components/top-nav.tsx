@@ -76,6 +76,7 @@ export function TopNav({ user, siteBookmarks, pendingRequestCount = 0 }: TopNavP
     ...(canMutate ? [{ href: "/orders/new", label: "New Order" }] : []),
     { href: "/bookmarks", label: "Bookmarks" },
     { href: "/tracking", label: "Tracking" },
+    ...(canMutate ? [{ href: "/members", label: "Members" }] : []),
     ...(canMutate ? [{ href: "/trash", label: "Trash" }] : []),
     {
       href: "/requests",

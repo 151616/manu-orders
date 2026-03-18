@@ -172,43 +172,48 @@ export async function createTrackingRequest(
 
 // ─── Admin: Approve / Reject order request ────────────────────────────────────
 
-export async function approveOrderRequest(id: string): Promise<void> {
+/** Thin void wrapper used as a form action (Next.js forms require void return). */
+export async function approveOrderRequestForm(id: string): Promise<void> {
+  await approveOrderRequest(id);
+}
+
+export async function approveOrderRequest(id: string): Promise<{ orderId: string }> {
   const admin = await requireAdmin();
 
   const req = await prisma.orderRequest.findUnique({ where: { id } });
-  if (!req || req.status !== "PENDING") return;
+  if (!req || req.status !== "PENDING") return { orderId: "" };
 
-  await prisma.$transaction([
-    prisma.order.create({
-      data: {
-        title: req.title,
-        description: req.description,
-        requesterName: req.requesterName,
-        vendor: req.vendor,
-        orderNumber: req.orderNumber,
-        orderUrl: req.orderUrl,
-        quantity: req.quantity,
-        category: req.category,
-        priority: req.priority,
-        etaDays: req.etaDays,
-        etaTargetDate: addDays(new Date(), req.etaDays),
-        status: "NEW",
-        createdByLabel: admin.label,
-        robot: req.robot ?? null,
-      },
-    }),
-    prisma.orderRequest.update({
-      where: { id },
-      data: {
-        status: "APPROVED",
-        reviewedAt: new Date(),
-        reviewedByLabel: admin.label,
-      },
-    }),
-  ]);
+  const order = await prisma.order.create({
+    data: {
+      title: req.title,
+      description: req.description,
+      requesterName: req.requesterName,
+      vendor: req.vendor,
+      orderNumber: req.orderNumber,
+      orderUrl: req.orderUrl,
+      quantity: req.quantity,
+      category: req.category,
+      priority: req.priority,
+      etaDays: req.etaDays,
+      etaTargetDate: null,
+      status: "PENDING_ORDER",
+      createdByLabel: admin.label,
+      robot: req.robot ?? null,
+    },
+  });
+
+  await prisma.orderRequest.update({
+    where: { id },
+    data: {
+      status: "APPROVED",
+      reviewedAt: new Date(),
+      reviewedByLabel: admin.label,
+    },
+  });
 
   revalidatePath("/queue");
   revalidatePath("/requests");
+  return { orderId: order.id };
 }
 
 export async function rejectOrderRequest(id: string, formData: FormData): Promise<void> {
