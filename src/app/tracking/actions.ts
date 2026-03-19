@@ -1,49 +1,99 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth";
+import { FieldValue } from "firebase-admin/firestore";
+import { requireAuth, requireLeadership } from "@/lib/auth";
 import {
+  manuRequestsCollection,
+  type ManuRequestDoc,
+} from "@/lib/firestore";
+import {
+  type FormActionState,
   EMPTY_FORM_STATE,
-  FormActionState,
-  getNullableTrimmedString,
   getTrimmedString,
+  getNullableTrimmedString,
 } from "@/lib/form-utils";
 import { handleServerMutationError } from "@/lib/action-errors";
-import { prisma } from "@/lib/prisma";
-import {
-  deleteTrackingFile,
-  uploadTrackingFile,
-} from "@/lib/manu-tracking-storage";
-import type { ManuRequestType, Robot } from "@prisma/client";
+import { ROBOTS, type Robot } from "@/lib/order-domain";
 
-const VALID_TYPES: ManuRequestType[] = ["CNC", "DRILL", "TAP", "CUT", "OTHER"];
-const VALID_ROBOTS: Robot[] = ["LAMBDA", "GAMMA"];
-const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+/* ------------------------------------------------------------------ */
+/*  Serialised shape returned to pages                                 */
+/* ------------------------------------------------------------------ */
+
+export type SerializedManuRequest = {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string;
+  otherType: string | null;
+  priority: number;
+  robot: string | null;
+  fileOriginalName: string | null;
+  fileUrl: string | null;
+};
+
+function docToManuRequest(
+  id: string,
+  d: ManuRequestDoc,
+): SerializedManuRequest {
+  return {
+    id,
+    title: d.title,
+    description: d.description ?? null,
+    type: d.type,
+    otherType: d.otherType ?? null,
+    priority: d.priority ?? 3,
+    robot: d.robot ?? null,
+    fileOriginalName: null, // file uploads not yet migrated
+    fileUrl: null,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  List active (not finished) requests                                */
+/* ------------------------------------------------------------------ */
+
+export async function listActiveManuRequests(): Promise<
+  SerializedManuRequest[]
+> {
+  await requireAuth();
+  try {
+    const snapshot = await manuRequestsCollection()
+      .where("isFinished", "==", false)
+      .get();
+
+    return snapshot.docs
+      .map((doc) => docToManuRequest(doc.id, doc.data() as ManuRequestDoc))
+      .sort((a, b) => b.priority - a.priority);
+  } catch (error) {
+    console.error("[listActiveManuRequests] failed.", error);
+    return [];
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Create a new tracking request (Level 1-3)                          */
+/* ------------------------------------------------------------------ */
+
+const VALID_TYPES = ["CNC", "DRILL", "TAP", "CUT", "OTHER"];
 
 export async function createManuRequest(
   _prev: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  try {
-    await requireAdmin();
-  } catch {
-    return { ...EMPTY_FORM_STATE, error: "Admin access required." };
-  }
+  const user = await requireLeadership();
 
   const title = getTrimmedString(formData.get("title"));
   const description = getNullableTrimmedString(formData.get("description"));
   const typeRaw = getTrimmedString(formData.get("type"));
   const otherType = getNullableTrimmedString(formData.get("otherType"));
   const robotRaw = getNullableTrimmedString(formData.get("robot"));
-  const robot: Robot | null = VALID_ROBOTS.includes(robotRaw as Robot) ? (robotRaw as Robot) : null;
+  const priorityRaw = formData.get("priority");
+  const priority = Math.min(5, Math.max(1, parseInt(String(priorityRaw ?? "3"), 10) || 3));
 
   const fieldErrors: Record<string, string> = {};
-
   if (!title) fieldErrors.title = "Title is required.";
-  if (!VALID_TYPES.includes(typeRaw as ManuRequestType)) {
-    fieldErrors.type = "Please select a valid type.";
-  }
+  if (!VALID_TYPES.includes(typeRaw)) fieldErrors.type = "Please select a type.";
   if (typeRaw === "OTHER" && !otherType) {
     fieldErrors.otherType = "Please describe the type.";
   }
@@ -51,82 +101,29 @@ export async function createManuRequest(
   if (Object.keys(fieldErrors).length > 0) {
     return {
       success: null,
-      error: null,
+      error: "Please fix the highlighted fields.",
       fieldErrors,
-      submittedValues: {
-        title,
-        description: description ?? "",
-        type: typeRaw,
-        otherType: otherType ?? "",
-      },
+      submittedValues: {},
     };
   }
 
-  const requestId = randomUUID();
-
-  let fileStoragePath: string | null = null;
-  let fileOriginalName: string | null = null;
-  let fileContentType: string | null = null;
-  let fileSizeBytes: number | null = null;
-
-  const fileEntry = formData.get("cncFile");
-  if (fileEntry instanceof File && fileEntry.size > 0) {
-    if (fileEntry.size > MAX_FILE_BYTES) {
-      return {
-        success: null,
-        error: "File is too large. Maximum size is 50 MB.",
-        fieldErrors: {},
-        submittedValues: {
-          title,
-          description: description ?? "",
-          type: typeRaw,
-          otherType: otherType ?? "",
-        },
-      };
-    }
-
-    const bytes = Buffer.from(await fileEntry.arrayBuffer());
-    try {
-      const uploaded = await uploadTrackingFile({
-        requestId,
-        originalName: fileEntry.name,
-        bytes,
-        contentType: fileEntry.type || null,
-      });
-      fileStoragePath = uploaded.storagePath;
-      fileOriginalName = fileEntry.name;
-      fileContentType = fileEntry.type || null;
-      fileSizeBytes = fileEntry.size;
-    } catch (uploadError) {
-      return {
-        ...EMPTY_FORM_STATE,
-        error: handleServerMutationError("uploadTrackingFile", uploadError),
-      };
-    }
-  }
+  const robot: string | null =
+    robotRaw && ROBOTS.includes(robotRaw as Robot) ? robotRaw : null;
 
   try {
-    const user = await requireAdmin();
-    await prisma.manuRequest.create({
-      data: {
-        id: requestId,
-        title,
-        description,
-        type: typeRaw as ManuRequestType,
-        otherType: typeRaw === "OTHER" ? otherType : null,
-        robot,
-        fileStoragePath,
-        fileOriginalName,
-        fileContentType,
-        fileSizeBytes,
-        isFinished: false,
-        createdByLabel: user.label,
-      },
+    const now = FieldValue.serverTimestamp();
+    await manuRequestsCollection().add({
+      title,
+      description,
+      type: typeRaw,
+      otherType,
+      isFinished: false,
+      priority,
+      robot,
+      createdByLabel: user.label,
+      updatedAt: now,
     });
   } catch (error) {
-    if (fileStoragePath) {
-      await deleteTrackingFile(fileStoragePath).catch(() => undefined);
-    }
     return {
       ...EMPTY_FORM_STATE,
       error: handleServerMutationError("createManuRequest", error),
@@ -135,26 +132,28 @@ export async function createManuRequest(
 
   revalidatePath("/tracking");
   return {
-    success: "Request created.",
+    success: "Request added to tracking.",
     error: null,
     fieldErrors: {},
     submittedValues: {},
   };
 }
 
+/* ------------------------------------------------------------------ */
+/*  Mark a request as finished (Level 1-3)                             */
+/* ------------------------------------------------------------------ */
+
 export async function finishManuRequest(id: string): Promise<void> {
-  await requireAdmin();
+  await requireLeadership();
+  if (!id) return;
 
-  const request = await prisma.manuRequest.findUnique({ where: { id } });
-  if (!request || request.isFinished) return;
-
-  await prisma.manuRequest.update({
-    where: { id },
-    data: { isFinished: true },
-  });
-
-  if (request.fileStoragePath) {
-    await deleteTrackingFile(request.fileStoragePath).catch(() => undefined);
+  try {
+    await manuRequestsCollection().doc(id).update({
+      isFinished: true,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("[finishManuRequest] failed.", error);
   }
 
   revalidatePath("/tracking");

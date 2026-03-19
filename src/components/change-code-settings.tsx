@@ -1,20 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { changeViewerCode, changeAdminCode } from "@/app/settings/actions";
+import { changePositionCode } from "@/app/settings/actions";
 
 type FormState = "idle" | "success" | "error";
 
 function CodeChangeForm({
   label,
   description,
-  currentLabel,
-  onSubmit,
+  position,
 }: {
   label: string;
   description: string;
-  currentLabel: string;
-  onSubmit: (current: string, next: string) => Promise<{ ok: boolean; error?: string }>;
+  position: "MEMBER" | "GAMMA_LEADERSHIP" | "LAMBDA_LEADERSHIP" | "ADMIN";
 }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -24,11 +22,8 @@ function CodeChangeForm({
   const [pending, startTransition] = useTransition();
 
   function reset() {
-    setCurrent("");
-    setNext("");
-    setConfirm("");
-    setState("idle");
-    setErrorMsg("");
+    setCurrent(""); setNext(""); setConfirm("");
+    setState("idle"); setErrorMsg("");
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -39,12 +34,10 @@ function CodeChangeForm({
       return;
     }
     startTransition(async () => {
-      const result = await onSubmit(current, next);
+      const result = await changePositionCode(position, current, next);
       if (result.ok) {
         setState("success");
-        setCurrent("");
-        setNext("");
-        setConfirm("");
+        setCurrent(""); setNext(""); setConfirm("");
       } else {
         setState("error");
         setErrorMsg(result.error ?? "Something went wrong.");
@@ -60,11 +53,7 @@ function CodeChangeForm({
       {state === "success" ? (
         <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 dark:border-green-500/20 dark:bg-green-900/10">
           <p className="text-sm text-green-700 dark:text-green-400">Code updated successfully.</p>
-          <button
-            type="button"
-            onClick={reset}
-            className="text-xs text-green-700/70 underline dark:text-green-400/70"
-          >
+          <button type="button" onClick={reset} className="text-xs text-green-700/70 underline dark:text-green-400/70">
             Change again
           </button>
         </div>
@@ -72,7 +61,7 @@ function CodeChangeForm({
         <form onSubmit={handleSubmit} className="mt-3 space-y-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-black/60 dark:text-white/60">
-              {currentLabel}
+              System Developer Code
             </label>
             <input
               type="password"
@@ -84,9 +73,7 @@ function CodeChangeForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-black/60 dark:text-white/60">
-              New Code
-            </label>
+            <label className="mb-1 block text-xs font-medium text-black/60 dark:text-white/60">New Code</label>
             <input
               type="password"
               value={next}
@@ -97,9 +84,7 @@ function CodeChangeForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-black/60 dark:text-white/60">
-              Confirm New Code
-            </label>
+            <label className="mb-1 block text-xs font-medium text-black/60 dark:text-white/60">Confirm New Code</label>
             <input
               type="password"
               value={confirm}
@@ -132,16 +117,23 @@ export function ChangeCodeSettings() {
     <div className="space-y-3">
       <CodeChangeForm
         label="Viewer Access Code"
-        description="Anyone with this code can log in as a viewer. Requires the current admin code (or system operator code) to change."
-        currentLabel="Current Admin Code"
-        onSubmit={changeViewerCode}
+        description="Shared password for all Viewer-level members."
+        position="MEMBER"
       />
-
+      <CodeChangeForm
+        label="Gamma Leadership Access Code"
+        description="Shared password for Gamma Leadership roles."
+        position="GAMMA_LEADERSHIP"
+      />
+      <CodeChangeForm
+        label="Lambda Leadership Access Code"
+        description="Shared password for Lambda Leadership roles."
+        position="LAMBDA_LEADERSHIP"
+      />
       <CodeChangeForm
         label="Admin Access Code"
-        description="Requires the system operator code to change."
-        currentLabel="System Operator Code"
-        onSubmit={changeAdminCode}
+        description="Shared password for Admin-level members."
+        position="ADMIN"
       />
     </div>
   );

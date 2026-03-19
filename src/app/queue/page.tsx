@@ -139,12 +139,12 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           {user.role === "ADMIN" ? (
-            <a
-              href="/orders/export.csv"
-              className="w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-center text-sm font-semibold text-black hover:bg-black/5 sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+            <Link
+              href="/orders/new"
+              className="w-full rounded-lg border border-black bg-black px-3 py-2 text-center text-sm font-semibold text-white hover:bg-black/85 sm:w-auto dark:border-white dark:bg-white dark:text-black dark:hover:bg-white/85"
             >
-              Export Orders CSV
-            </a>
+              + New Order
+            </Link>
           ) : (
             <Link
               href="/requests?open=order"
@@ -199,7 +199,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                     {order.title}
                   </h3>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <RobotBadge robot={(order as { robot?: string | null }).robot} />
+                    <RobotBadge robot={order.robot} />
                     <StatusBadge status={order.status} />
                   </div>
                 </div>
@@ -264,7 +264,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
                       ) : isCompact && isDueSoon ? (
                         <span className="text-xs font-semibold text-black/60 dark:text-white/60">DUE SOON</span>
                       ) : null}
-                      <RobotBadge robot={(order as { robot?: string | null }).robot} />
+                      <RobotBadge robot={order.robot} />
                       <StatusBadge status={order.status} />
                     </div>
                   </div>

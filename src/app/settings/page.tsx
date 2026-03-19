@@ -4,6 +4,8 @@ import { ChangeCodeSettings } from "@/components/change-code-settings";
 
 export default async function SettingsPage() {
   const user = await requireAuth();
+  const isSysdev = user.permissionLevel === 1; // Level 1 is the highest on-site user
+  const isAdmin  = user.role === "ADMIN";
 
   return (
     <div className="mx-auto max-w-lg">
@@ -17,7 +19,22 @@ export default async function SettingsPage() {
         <ThemeSettings />
       </section>
 
-      {user.role === "ADMIN" && (
+      {isAdmin && (
+        <section className="mb-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
+            Roles
+          </h2>
+          <a
+            href="/settings/roles"
+            className="flex items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black hover:bg-black/[0.02] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/[0.06]"
+          >
+            Manage Roles
+            <span className="text-black/40 dark:text-white/40">→</span>
+          </a>
+        </section>
+      )}
+
+      {isSysdev && (
         <section>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
             Access Codes

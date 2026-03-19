@@ -1,64 +1,49 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { importMembers, MemberRow, CsvRow } from "@/app/members/actions";
+import { useState, useMemo, useTransition } from "react";
+import {
+  updateMemberProfile,
+  getMembers,
+  type MemberRow,
+} from "@/app/members/actions";
 
-const SUBTEAM_LABELS: Record<string, string> = {
-  ASSEMBLY: "Assembly",
-  ELECTRICAL: "Electrical",
-  MANUFACTURING: "Manufacturing",
-  BUSINESS: "Business",
-  OTHER: "Other",
+const LEVEL_LABELS: Record<number, string> = {
+  1: "Admin",
+  2: "Upper Leadership",
+  3: "Lower Leadership",
+  4: "Member",
+  5: "Pending",
 };
 
-const POSITION_LABELS: Record<string, string> = {
-  MEMBER: "Member",
-  LOWER_LEADERSHIP: "Lower Leadership",
-  UPPER_LEADERSHIP: "Upper Leadership",
-  ADMIN: "Admin",
-};
+type SortKey = "name_asc" | "name_desc" | "position_asc" | "level_asc";
 
-type ImportSummary = {
-  added: number;
-  updated: number;
-  removed: number;
-  skipped: number;
-  errors: string[];
-};
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "name_asc", label: "Name A → Z" },
+  { value: "name_desc", label: "Name Z → A" },
+  { value: "position_asc", label: "Position A → Z" },
+  { value: "level_asc", label: "Level (highest first)" },
+];
 
-function parseCsv(text: string): CsvRow[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return [];
-
-  // Skip header row
-  const dataLines = lines.slice(1);
-
-  return dataLines.map((line) => {
-    // Handle quoted fields
-    const cols: string[] = [];
-    let current = "";
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        inQuotes = !inQuotes;
-      } else if (ch === "," && !inQuotes) {
-        cols.push(current);
-        current = "";
-      } else {
-        current += ch;
-      }
+function sortMembers(members: MemberRow[], sort: SortKey): MemberRow[] {
+  return [...members].sort((a, b) => {
+    switch (sort) {
+      case "name_asc":
+        return a.nickname.localeCompare(b.nickname);
+      case "name_desc":
+        return b.nickname.localeCompare(a.nickname);
+      case "position_asc":
+        return a.position.localeCompare(b.position);
+      case "level_asc":
+        return a.permissionLevel - b.permissionLevel;
     }
-    cols.push(current);
-
-    return {
-      firstName: cols[0]?.trim() ?? "",
-      lastName: cols[1]?.trim() ?? "",
-      subteam: cols[2]?.trim() ?? "",
-      position: cols[3]?.trim() ?? "",
-    };
   });
 }
+
+type EditState = {
+  id: string;
+  nickname: string;
+  position: string;
+};
 
 type Props = {
   initialMembers: MemberRow[];
@@ -66,104 +51,120 @@ type Props = {
 
 export function MembersTable({ initialMembers }: Props) {
   const [members, setMembers] = useState<MemberRow[]>(initialMembers);
-  const [summary, setSummary] = useState<ImportSummary | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("name_asc");
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<EditState | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [rowPending, startRowTransition] = useTransition();
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const rows = parseCsv(text);
+  const displayMembers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? members.filter(
+          (m) =>
+            m.nickname.toLowerCase().includes(q) ||
+            m.position.toLowerCase().includes(q) ||
+            m.subteam.toLowerCase().includes(q) ||
+            (LEVEL_LABELS[m.permissionLevel] ?? "").toLowerCase().includes(q),
+        )
+      : members;
+    return sortMembers(filtered, sort);
+  }, [members, search, sort]);
 
-      if (rows.length === 0) {
-        setImportError("No valid rows found in CSV. Make sure it has a header row and data rows.");
+  function startEdit(member: MemberRow) {
+    setEditingId(member.id);
+    setEditState({
+      id: member.id,
+      nickname: member.nickname,
+      position: member.position,
+    });
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditState(null);
+    setEditError(null);
+  }
+
+  function handleSaveEdit() {
+    if (!editState) return;
+    setEditError(null);
+    startRowTransition(async () => {
+      const result = await updateMemberProfile(editState.id, {
+        nickname: editState.nickname,
+        position: editState.position,
+      });
+      if (!result.ok) {
+        setEditError(result.error);
         return;
       }
-
-      setImportError(null);
-      setSummary(null);
-
-      startTransition(async () => {
-        try {
-          const result = await importMembers(rows);
-          setSummary(result);
-
-          // Refresh members list
-          const { getMembers } = await import("@/app/members/actions");
-          const updated = await getMembers();
-          setMembers(updated);
-        } catch {
-          setImportError("Import failed. Please try again.");
-        }
-      });
-    };
-    reader.readAsText(file);
-
-    // Reset input so same file can be re-imported
-    e.target.value = "";
+      // Refresh full list from Firestore
+      const updated = await getMembers();
+      setMembers(updated);
+      setEditingId(null);
+      setEditState(null);
+    });
   }
+
+  const inputClass =
+    "w-full rounded border border-black/20 bg-white px-2 py-1 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black/20 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:ring-white/20";
 
   return (
     <div className="space-y-4">
-      {/* Import Controls */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm text-black/60 dark:text-white/60">
-            {members.length} member{members.length !== 1 ? "s" : ""}
+      {/* Search & Sort */}
+      <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white/95 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center justify-between px-4 py-3">
+          <span className="text-sm font-semibold text-black dark:text-white">
+            Search & Sort
+          </span>
+          <p className="text-xs text-black/50 dark:text-white/50">
+            {displayMembers.length} of {members.length} user
+            {members.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isPending}
-          className="rounded-md border border-black/20 bg-white px-3 py-1.5 text-sm font-medium text-black hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/20 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
-        >
-          {isPending ? "Importing…" : "Import CSV"}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </div>
-
-      {/* Import Summary */}
-      {summary && (
-        <div className="rounded-lg border border-black/10 bg-black/[0.02] p-3 text-sm dark:border-white/10 dark:bg-white/[0.03]">
-          <p className="font-medium text-black dark:text-white">Import complete</p>
-          <p className="mt-1 text-black/60 dark:text-white/60">
-            {summary.added} added · {summary.updated} updated · {summary.removed} removed
-            {summary.skipped > 0 ? ` · ${summary.skipped} skipped` : ""}
-          </p>
-          {summary.errors.length > 0 && (
-            <ul className="mt-2 space-y-0.5">
-              {summary.errors.map((err, i) => (
-                <li key={i} className="text-amber-700 dark:text-amber-400">
-                  {err}
-                </li>
+        <div className="grid gap-3 border-t border-zinc-200/80 p-4 sm:grid-cols-2 dark:border-white/10">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-black/60 dark:text-white/60">
+              Search
+            </label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Name, position, level…"
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/55 dark:focus:border-white/40 dark:focus:ring-white/10"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-black/60 dark:text-white/60">
+              Sort
+            </label>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="w-full rounded-md border border-zinc-300/80 px-3 py-2 text-sm text-black outline-none ring-offset-1 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-white/20 dark:bg-white/5 dark:text-white dark:focus:border-white/40 dark:focus:ring-white/10"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
-            </ul>
-          )}
+            </select>
+          </div>
         </div>
-      )}
-
-      {/* Import Error */}
-      {importError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-900/20 dark:text-red-300">
-          {importError}
-        </div>
-      )}
+      </div>
 
       {/* Table */}
       {members.length === 0 ? (
         <div className="rounded-lg border border-black/10 bg-white p-8 text-center text-sm text-black/50 dark:border-white/10 dark:bg-white/5 dark:text-white/50">
-          No members yet. Import a CSV to get started.
+          No users registered yet.
+        </div>
+      ) : displayMembers.length === 0 ? (
+        <div className="rounded-lg border border-black/10 bg-white p-8 text-center text-sm text-black/50 dark:border-white/10 dark:bg-white/5 dark:text-white/50">
+          No users match your search.
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-black/10 dark:border-white/10">
@@ -171,39 +172,141 @@ export function MembersTable({ initialMembers }: Props) {
             <thead>
               <tr className="border-b border-black/10 bg-black/[0.03] dark:border-white/10 dark:bg-white/[0.03]">
                 <th className="px-4 py-2.5 text-left font-medium text-black/60 dark:text-white/60">
-                  First Name
+                  Name
                 </th>
                 <th className="px-4 py-2.5 text-left font-medium text-black/60 dark:text-white/60">
-                  Last Name
+                  Position
                 </th>
                 <th className="px-4 py-2.5 text-left font-medium text-black/60 dark:text-white/60">
                   Subteam
                 </th>
                 <th className="px-4 py-2.5 text-left font-medium text-black/60 dark:text-white/60">
-                  Position
+                  Level
                 </th>
+                <th className="px-4 py-2.5 text-right font-medium text-black/60 dark:text-white/60" />
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5">
-              {members.map((member) => (
-                <tr
-                  key={member.id}
-                  className="bg-white hover:bg-black/[0.015] dark:bg-transparent dark:hover:bg-white/[0.02]"
-                >
-                  <td className="px-4 py-2.5 text-black dark:text-white">
-                    {member.firstName}
-                  </td>
-                  <td className="px-4 py-2.5 text-black dark:text-white">
-                    {member.lastName}
-                  </td>
-                  <td className="px-4 py-2.5 text-black/70 dark:text-white/70">
-                    {SUBTEAM_LABELS[member.subteam] ?? member.subteam}
-                  </td>
-                  <td className="px-4 py-2.5 text-black/70 dark:text-white/70">
-                    {POSITION_LABELS[member.position] ?? member.position}
-                  </td>
-                </tr>
-              ))}
+              {displayMembers.map((member) => {
+                const isEditing = editingId === member.id;
+                const cellClass = "px-4 py-2 align-middle";
+
+                if (isEditing && editState) {
+                  return (
+                    <tr
+                      key={member.id}
+                      className="bg-black/[0.015] dark:bg-white/[0.03]"
+                    >
+                      <td className={cellClass}>
+                        <input
+                          value={editState.nickname}
+                          onChange={(e) =>
+                            setEditState({
+                              ...editState,
+                              nickname: e.target.value,
+                            })
+                          }
+                          className={inputClass}
+                        />
+                      </td>
+                      <td className={cellClass}>
+                        <input
+                          value={editState.position}
+                          onChange={(e) =>
+                            setEditState({
+                              ...editState,
+                              position: e.target.value,
+                            })
+                          }
+                          className={inputClass}
+                        />
+                      </td>
+                      <td
+                        className={`${cellClass} text-black/40 dark:text-white/40`}
+                      >
+                        {member.subteam || "—"}
+                      </td>
+                      <td
+                        className={`${cellClass} text-black/40 dark:text-white/40`}
+                      >
+                        {LEVEL_LABELS[member.permissionLevel] ??
+                          `Level ${member.permissionLevel}`}
+                      </td>
+                      <td className={`${cellClass} text-right`}>
+                        <div className="flex items-center justify-end gap-2">
+                          {editError && (
+                            <span className="text-xs text-red-600 dark:text-red-400">
+                              {editError}
+                            </span>
+                          )}
+                          <button
+                            onClick={handleSaveEdit}
+                            disabled={rowPending}
+                            className="rounded bg-black px-2.5 py-1 text-xs font-semibold text-white hover:bg-black/80 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-white/85"
+                          >
+                            {rowPending ? "Saving…" : "Save"}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            disabled={rowPending}
+                            className="rounded border border-black/20 px-2.5 py-1 text-xs font-medium text-black/70 hover:bg-black/5 disabled:opacity-50 dark:border-white/20 dark:text-white/70 dark:hover:bg-white/10"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return (
+                  <tr
+                    key={member.id}
+                    className="bg-white hover:bg-black/[0.015] dark:bg-transparent dark:hover:bg-white/[0.02]"
+                  >
+                    <td className={`${cellClass} text-black dark:text-white`}>
+                      {member.nickname}
+                    </td>
+                    <td
+                      className={`${cellClass} text-black/70 dark:text-white/70`}
+                    >
+                      {member.position || "—"}
+                    </td>
+                    <td
+                      className={`${cellClass} text-black/70 dark:text-white/70`}
+                    >
+                      {member.subteam || "—"}
+                    </td>
+                    <td className={cellClass}>
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                          member.permissionLevel === 1
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                            : member.permissionLevel === 2
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                              : member.permissionLevel === 3
+                                ? "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300"
+                                : member.permissionLevel === 4
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                        }`}
+                      >
+                        {LEVEL_LABELS[member.permissionLevel] ??
+                          `Level ${member.permissionLevel}`}
+                      </span>
+                    </td>
+                    <td className={`${cellClass} text-right`}>
+                      <button
+                        onClick={() => startEdit(member)}
+                        disabled={rowPending || !!editingId}
+                        className="rounded border border-black/15 px-2.5 py-1 text-xs font-medium text-black/70 hover:bg-black/5 disabled:opacity-40 dark:border-white/15 dark:text-white/70 dark:hover:bg-white/10"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

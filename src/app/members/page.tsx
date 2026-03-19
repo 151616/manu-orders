@@ -9,9 +9,9 @@ export default async function MembersPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-black dark:text-white">Members</h1>
+        <h1 className="text-xl font-bold text-black dark:text-white">Users</h1>
         <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-          Import from a CSV exported from Google Sheets. Columns: First Name, Last Name, Subteam, Position.
+          View all registered users. You can edit nicknames and positions.
         </p>
       </div>
       <MembersTable initialMembers={members} />

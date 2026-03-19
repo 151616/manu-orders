@@ -48,6 +48,7 @@ dev.db-journal
 *.pre-restore-*.sqlite
 /public/uploads
 firebase-service-account*.json
+manuqueue-*.json
 firebase-debug.log
 firebase-debug.*.log
 /.firebase

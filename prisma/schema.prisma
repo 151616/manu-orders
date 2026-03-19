@@ -200,24 +200,38 @@ enum MemberSubteam {
   ELECTRICAL
   MANUFACTURING
   BUSINESS
+  CAD
+  PROGRAMMING
   OTHER
 }
 
-enum MemberPosition {
-  MEMBER
-  LOWER_LEADERSHIP
-  UPPER_LEADERSHIP
+enum PermissionLevel {
+  VIEWER
+  LEADERSHIP
   ADMIN
+  SYSTEM_DEV
+}
+
+model Role {
+  id              String          @id @default(uuid())
+  name            String          @unique
+  permissionLevel PermissionLevel
+  defaultRobot    String?
+  isProtected     Boolean         @default(false)
+  members         Member[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model Member {
-  id        String         @id @default(uuid())
+  id        String        @id @default(uuid())
   firstName String
   lastName  String
   subteam   MemberSubteam
-  position  MemberPosition
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  roleId    String
+  role      Role          @relation(fields: [roleId], references: [id])
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   @@unique([firstName, lastName])
 }

@@ -7,6 +7,8 @@ import { CustomSelect } from "@/components/custom-select";
 import { EMPTY_FORM_STATE } from "@/lib/form-utils";
 import { ROBOTS, ROBOT_LABELS, type Robot } from "@/lib/order-domain";
 import { RobotBadge } from "@/components/robot-badge";
+import { PriorityStarsInput } from "@/components/priority-stars-input";
+import { PriorityStarsDisplay } from "@/components/priority-stars-display";
 
 type ManuRequestType = "CNC" | "DRILL" | "TAP" | "CUT" | "OTHER";
 
@@ -32,10 +34,10 @@ export type ManuRequestItem = {
   description: string | null;
   type: ManuRequestType;
   otherType: string | null;
+  priority: number;
   robot: Robot | null;
   fileOriginalName: string | null;
   fileUrl: string | null;
-  createdAt: string;
 };
 
 type TrackingClientProps = {
@@ -172,6 +174,13 @@ function AddRequestForm({ onClose }: { onClose: () => void }) {
           />
         </label>
 
+        <div className="block">
+          <span className="mb-1 block text-sm font-medium text-black dark:text-white">
+            Priority
+          </span>
+          <PriorityStarsInput name="priority" defaultValue={3} />
+        </div>
+
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-black dark:text-white">
             CNC File{" "}
@@ -278,13 +287,10 @@ function RequestCard({
         </a>
       ) : null}
 
-      <p className="text-xs text-black/40 dark:text-white/40">
-        {new Date(request.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}
-      </p>
+      <PriorityStarsDisplay
+        value={request.priority}
+        className="text-sm tracking-wide text-black/60 dark:text-white/60"
+      />
     </div>
   );
 }

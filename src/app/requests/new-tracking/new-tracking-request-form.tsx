@@ -11,21 +11,22 @@ import { ROBOTS, ROBOT_LABELS, type Robot } from "@/lib/order-domain";
 type ManuRequestType = "CNC" | "DRILL" | "TAP" | "CUT" | "OTHER";
 
 type Props = {
+  defaultRobot?: "GAMMA" | "LAMBDA" | null;
   onSuccess?: () => void;
   onCancel?: () => void;
 };
 
-export function NewTrackingRequestForm({ onSuccess, onCancel }: Props = {}) {
+export function NewTrackingRequestForm({ defaultRobot, onSuccess, onCancel }: Props = {}) {
   const [state, formAction] = useActionState(createTrackingRequest, EMPTY_FORM_STATE);
   const [formKey, setFormKey] = useState(0);
   const [selectedType, setSelectedType] = useState<ManuRequestType>("CNC");
-  const [selectedRobot, setSelectedRobot] = useState<Robot | "">("");
+  const [selectedRobot, setSelectedRobot] = useState<Robot | "">(defaultRobot ?? "");
 
   useEffect(() => {
     if (state.success) {
       setFormKey((k) => k + 1);
       setSelectedType("CNC");
-      setSelectedRobot("");
+      setSelectedRobot(defaultRobot ?? "");
       onSuccess?.();
     }
   }, [state.success, onSuccess]);
@@ -120,20 +121,32 @@ export function NewTrackingRequestForm({ onSuccess, onCancel }: Props = {}) {
           </label>
         ) : null}
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-black/80 dark:text-white/80">
-            Robot
-          </span>
-          <CustomSelect
-            name="robot"
-            value={selectedRobot}
-            onChange={(v) => setSelectedRobot(v as Robot | "")}
-            options={[
-              { value: "", label: "Unassigned" },
-              ...ROBOTS.map((r) => ({ value: r, label: ROBOT_LABELS[r] })),
-            ]}
-          />
-        </label>
+        {defaultRobot ? (
+          <>
+            <input type="hidden" name="robot" value={defaultRobot} />
+            <div>
+              <span className="mb-1 block text-sm font-medium text-black/80 dark:text-white/80">Robot</span>
+              <p className="rounded-md border border-zinc-300/80 bg-zinc-50 px-3 py-2 text-sm text-black/70 dark:border-white/20 dark:bg-white/5 dark:text-white/70">
+                {ROBOT_LABELS[defaultRobot]}
+              </p>
+            </div>
+          </>
+        ) : (
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-black/80 dark:text-white/80">
+              Robot
+            </span>
+            <CustomSelect
+              name="robot"
+              value={selectedRobot}
+              onChange={(v) => setSelectedRobot(v as Robot | "")}
+              options={[
+                { value: "", label: "Unassigned" },
+                ...ROBOTS.map((r) => ({ value: r, label: ROBOT_LABELS[r] })),
+              ]}
+            />
+          </label>
+        )}
 
         <div className="flex gap-2">
           <SubmitButton idleLabel="Submit Request" />

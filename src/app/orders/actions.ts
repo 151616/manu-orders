@@ -2,43 +2,79 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, requireAuth } from "@/lib/auth";
+import { FieldValue } from "firebase-admin/firestore";
+import { requireAuth, requireAdmin } from "@/lib/auth";
+import { db, ordersCollection, type OrderDoc } from "@/lib/firestore";
 import {
-  collectSubmittedValues,
   FormActionState,
+  EMPTY_FORM_STATE,
+  getTrimmedString,
   getNullableTrimmedString,
   getOptionalInt,
-  getTrimmedString,
-  toFieldErrors,
 } from "@/lib/form-utils";
 import { handleServerMutationError } from "@/lib/action-errors";
 import {
   ORDER_CATEGORIES,
-  ORDER_STATUS_SORT_ORDER,
   ORDER_STATUSES,
+  ORDER_STATUS_SORT_ORDER,
   ROBOTS,
   type OrderCategory,
   type OrderStatus,
   type Robot,
 } from "@/lib/order-domain";
-import type {
-  OrderCategory as PrismaOrderCategory,
-  OrderStatus as PrismaOrderStatus,
-  Prisma,
-} from "@prisma/client";
-import {
-  ActionIdSchema,
-  OrderCreateSchema,
-  OrderManufacturingUpdateSchema,
-  OrderRequesterUpdateSchema,
-} from "@/lib/schemas";
 import { addDays } from "@/lib/eta";
-import {
-  deleteOrderAttachmentObject,
-  resolveOrderAttachmentPublicUrl,
-  uploadOrderAttachmentObject,
-} from "@/lib/order-attachments-storage";
-import { prisma } from "@/lib/prisma";
+
+/* ------------------------------------------------------------------ */
+/*  Serialised order shape returned to pages                          */
+/* ------------------------------------------------------------------ */
+
+export type SerializedOrder = {
+  id: string;
+  title: string;
+  description: string | null;
+  requesterName: string;
+  vendor: string | null;
+  orderNumber: string | null;
+  orderUrl: string | null;
+  quantity: number | null;
+  category: string;
+  priority: number;
+  etaDays: number;
+  etaTargetDate: Date | null;
+  status: string;
+  isDeleted: boolean;
+  notesFromManu: string | null;
+  robot: string | null;
+  createdByLabel: string | null;
+  updatedAt: Date;
+};
+
+function docToOrder(id: string, data: OrderDoc): SerializedOrder {
+  return {
+    id,
+    title: data.title,
+    description: data.description ?? null,
+    requesterName: data.requesterName,
+    vendor: data.vendor ?? null,
+    orderNumber: data.orderNumber ?? null,
+    orderUrl: data.orderUrl ?? null,
+    quantity: data.quantity ?? null,
+    category: data.category,
+    priority: data.priority,
+    etaDays: data.etaDays,
+    etaTargetDate: data.etaTargetDate?.toDate() ?? null,
+    status: data.status,
+    isDeleted: data.isDeleted,
+    notesFromManu: data.notesFromManu ?? null,
+    robot: data.robot ?? null,
+    createdByLabel: data.createdByLabel ?? null,
+    updatedAt: data.updatedAt?.toDate() ?? new Date(),
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  List helpers                                                      */
+/* ------------------------------------------------------------------ */
 
 type ListOrdersInput = {
   search?: string | null;
@@ -47,833 +83,301 @@ type ListOrdersInput = {
   robot?: Robot | "ALL" | null;
 };
 
-type OrderListRedirectTarget = "queue" | "trash";
-
-type ActivityDiff = {
-  field: string;
-  from: string;
-  to: string;
-};
-
-type ActivityDetails = {
-  summary: string;
-  diffs: ActivityDiff[];
-};
-
-type OrderActivityFeedItem = {
-  id: string;
-  action: string;
-  at: Date;
-  role: string;
-  details: ActivityDetails;
-};
-
-type OrderAttachmentListItem = {
-  id: string;
-  orderId: string;
-  originalName: string;
-  storagePath: string;
-  publicUrl: string;
-  contentType: string | null;
-  sizeBytes: number;
-  createdAt: Date;
-};
-
-const FIELD_LABELS: Record<string, string> = {
-  title: "Title",
-  description: "Description",
-  vendor: "Vendor",
-  orderNumber: "Order Number",
-  orderUrl: "Order URL",
-  quantity: "Quantity",
-  category: "Category",
-  requesterName: "Requester Name",
-  priority: "Priority",
-  etaDays: "ETA Days",
-  status: "Status",
-  isDeleted: "Deleted",
-  notesFromManu: "Manufacturing Notes",
-  robot: "Robot",
-};
-
-const ORDER_CREATE_ALLOWED_FIELDS = [
-  "title",
-  "description",
-  "vendor",
-  "orderNumber",
-  "orderUrl",
-  "quantity",
-  "category",
-  "requesterName",
-  "priority",
-  "etaDays",
-  "robot",
-] as const;
-
-const ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS = [
-  "title",
-  "description",
-  "vendor",
-  "orderNumber",
-  "orderUrl",
-  "quantity",
-  "category",
-  "requesterName",
-] as const;
-
-const ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS = [
-  "priority",
-  "etaDays",
-  "status",
-  "notesFromManu",
-  "robot",
-] as const;
-
-const ORDER_ATTACHMENT_ALLOWED_FIELDS = ["attachment"] as const;
-const ORDER_ATTACHMENT_MAX_BYTES = 100 * 1024 * 1024;
-const LIST_ORDERS_TIMEOUT_MS = 5000;
-
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  timeoutErrorMessage: string,
-): Promise<T> {
-  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutHandle = setTimeout(() => {
-      reject(new Error(timeoutErrorMessage));
-    }, timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutHandle) {
-      clearTimeout(timeoutHandle);
-    }
-  }
-}
-
-function parseRequesterFields(formData: FormData) {
-  return OrderRequesterUpdateSchema.safeParse({
-    title: getTrimmedString(formData.get("title")),
-    description: getNullableTrimmedString(formData.get("description")),
-    vendor: getNullableTrimmedString(formData.get("vendor")),
-    orderNumber: getNullableTrimmedString(formData.get("orderNumber")),
-    orderUrl: getNullableTrimmedString(formData.get("orderUrl")),
-    quantity: getOptionalInt(formData.get("quantity")),
-    category: getTrimmedString(formData.get("category")),
-    requesterName: getTrimmedString(formData.get("requesterName")),
-  });
-}
-
-function parseManufacturingFields(formData: FormData) {
-  const robotRaw = getNullableTrimmedString(formData.get("robot"));
-  return OrderManufacturingUpdateSchema.safeParse({
-    priority: getOptionalInt(formData.get("priority")),
-    etaDays: getOptionalInt(formData.get("etaDays")),
-    status: getTrimmedString(formData.get("status")),
-    notesFromManu: getNullableTrimmedString(formData.get("notesFromManu")),
-    robot: robotRaw || null,
-  });
-}
-
-function hasUnexpectedFormKeys(
-  formData: FormData,
-  allowedFields: readonly string[],
-) {
-  const allowed = new Set(allowedFields);
-
-  for (const key of formData.keys()) {
-    if (key.startsWith("$ACTION_")) {
-      continue;
-    }
-    if (!allowed.has(key)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function parseActionId(id: string) {
-  const parsed = ActionIdSchema.safeParse(id);
-  return parsed.success ? parsed.data : null;
-}
-
-function orderListPath(target: OrderListRedirectTarget): string {
-  return target === "trash" ? "/trash" : "/queue";
-}
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === "") {
-    return "N/A";
-  }
-
-  return String(value);
-}
-
-function buildDiffs(
-  previousValues: Record<string, unknown>,
-  nextValues: Record<string, unknown>,
-): ActivityDiff[] {
-  const diffs: ActivityDiff[] = [];
-
-  Object.entries(nextValues).forEach(([key, nextValue]) => {
-    const previousValue = previousValues[key];
-    if (previousValue === nextValue) {
-      return;
-    }
-
-    diffs.push({
-      field: key,
-      from: formatValue(previousValue),
-      to: formatValue(nextValue),
-    });
-  });
-
-  return diffs;
-}
-
-function summarizeDiffs(
-  diffs: ActivityDiff[],
-  fallback: string,
-): string {
-  if (diffs.length === 0) {
-    return fallback;
-  }
-
-  return diffs
-    .map((diff) => `${FIELD_LABELS[diff.field] ?? diff.field}: ${diff.from} -> ${diff.to}`)
-    .join(" | ");
-}
-
-async function createOrderActivity({
-  orderId,
-  role,
-  action,
-  summary,
-  diffs,
-}: {
-  orderId?: string | null;
-  role: string;
-  action: string;
-  summary: string;
-  diffs: ActivityDiff[];
-}) {
-  const details: ActivityDetails = {
-    summary,
-    diffs,
-  };
-
-  await prisma.orderActivity.create({
-    data: {
-      orderId,
-      role,
-      action,
-      details: JSON.stringify(details),
-    },
-  });
-}
-
-function parseActivityDetails(rawDetails: string): ActivityDetails {
-  try {
-    const parsed = JSON.parse(rawDetails) as Partial<ActivityDetails>;
-    const diffs = Array.isArray(parsed.diffs)
-      ? parsed.diffs.filter(
-          (item): item is ActivityDiff =>
-            typeof item === "object" &&
-            item !== null &&
-            typeof item.field === "string" &&
-            typeof item.from === "string" &&
-            typeof item.to === "string",
-        )
-      : [];
-
-    return {
-      summary:
-        typeof parsed.summary === "string" && parsed.summary.length > 0
-          ? parsed.summary
-          : "Activity recorded.",
-      diffs,
-    };
-  } catch {
-    return {
-      summary: "Activity recorded.",
-      diffs: [],
-    };
-  }
-}
-
 export async function listOrders({
   search,
   status,
   category,
   robot,
-}: ListOrdersInput = {}) {
+}: ListOrdersInput = {}): Promise<SerializedOrder[]> {
   await requireAuth();
 
-  const trimmedSearch = search?.trim() ?? "";
+  const trimmedSearch = search?.trim().toLowerCase() ?? "";
   const statusFilter =
-    status && status !== "ALL" && ORDER_STATUSES.includes(status)
-      ? status
+    status && status !== "ALL" && ORDER_STATUSES.includes(status as OrderStatus)
+      ? (status as OrderStatus)
       : undefined;
   const categoryFilter =
-    category &&
-    category !== "ALL" &&
-    ORDER_CATEGORIES.includes(category as OrderCategory)
-      ? category
+    category && category !== "ALL" && ORDER_CATEGORIES.includes(category as OrderCategory)
+      ? (category as OrderCategory)
       : undefined;
   const robotFilter =
     robot && robot !== "ALL" && ROBOTS.includes(robot as Robot)
       ? (robot as Robot)
       : undefined;
-  const whereClause: Prisma.OrderWhereInput = {
-    isDeleted: false,
-    ...(trimmedSearch
-      ? {
-          OR: [
-            { title: { contains: trimmedSearch } },
-            { orderNumber: { contains: trimmedSearch } },
-            { requesterName: { contains: trimmedSearch } },
-          ],
-        }
-      : {}),
-    ...(statusFilter
-      ? { status: statusFilter as PrismaOrderStatus }
-      : { status: { notIn: ["CANCELLED", "PENDING_ORDER"] as PrismaOrderStatus[] } }),
-    ...(categoryFilter
-      ? { category: categoryFilter as PrismaOrderCategory }
-      : {}),
-    ...(robotFilter ? { robot: robotFilter } : {}),
-  };
 
-  let orders:
-    | Awaited<ReturnType<typeof prisma.order.findMany>>
-    | [] = [];
   try {
-    orders = await withTimeout(
-      prisma.order.findMany({
-        where: whereClause,
-        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
-      }),
-      LIST_ORDERS_TIMEOUT_MS,
-      "listOrders query timed out.",
+    // Fetch all non-deleted orders, filter client-side to avoid composite indexes
+    const snapshot = await ordersCollection()
+      .where("isDeleted", "==", false)
+      .get();
+
+    let orders: SerializedOrder[] = snapshot.docs.map((doc) =>
+      docToOrder(doc.id, doc.data() as OrderDoc),
     );
+
+    // Apply filters client-side
+    if (statusFilter) {
+      orders = orders.filter((o) => o.status === statusFilter);
+    } else {
+      // Filter out CANCELLED and PENDING_ORDER by default
+      orders = orders.filter(
+        (o) => o.status !== "CANCELLED" && o.status !== "PENDING_ORDER",
+      );
+    }
+    if (categoryFilter) {
+      orders = orders.filter((o) => o.category === categoryFilter);
+    }
+    if (robotFilter) {
+      orders = orders.filter((o) => o.robot === robotFilter);
+    }
+
+    // Client-side text search (Firestore doesn't support full-text)
+    if (trimmedSearch) {
+      orders = orders.filter(
+        (o) =>
+          o.title.toLowerCase().includes(trimmedSearch) ||
+          (o.orderNumber ?? "").toLowerCase().includes(trimmedSearch) ||
+          o.requesterName.toLowerCase().includes(trimmedSearch),
+      );
+    }
+
+    // Sort: priority desc → status sort order
+    const statusSortValue = (s: string) =>
+      ORDER_STATUS_SORT_ORDER[s as OrderStatus] ?? Number.MAX_SAFE_INTEGER;
+
+    orders.sort((a, b) => {
+      if (a.priority !== b.priority) return b.priority - a.priority;
+      return statusSortValue(a.status) - statusSortValue(b.status);
+    });
+
+    return orders;
   } catch (error) {
     console.error("[listOrders] failed, returning empty result.", error);
     return [];
   }
-
-  const statusSortValue = (statusValue: string) =>
-    ORDER_STATUS_SORT_ORDER[statusValue as OrderStatus] ?? Number.MAX_SAFE_INTEGER;
-
-  return orders.sort((a, b) => {
-    if (a.priority !== b.priority) {
-      return b.priority - a.priority;
-    }
-
-    const statusDelta = statusSortValue(a.status) - statusSortValue(b.status);
-    if (statusDelta !== 0) {
-      return statusDelta;
-    }
-
-    return a.createdAt.getTime() - b.createdAt.getTime();
-  });
 }
 
-export async function listPendingOrders() {
+export async function listPendingOrders(): Promise<SerializedOrder[]> {
   await requireAuth();
   try {
-    return await withTimeout(
-      prisma.order.findMany({
-        where: { status: "PENDING_ORDER", isDeleted: false },
-        orderBy: [{ createdAt: "asc" }],
-      }),
-      LIST_ORDERS_TIMEOUT_MS,
-      "listPendingOrders query timed out.",
-    );
-  } catch {
-    return [];
-  }
-}
+    const snapshot = await ordersCollection()
+      .where("status", "==", "PENDING_ORDER")
+      .get();
 
-export async function listDeletedOrders() {
-  const user = await requireAdmin();
+    const orders = snapshot.docs
+      .map((doc) => docToOrder(doc.id, doc.data() as OrderDoc))
+      .filter((o) => !o.isDeleted)
+      .sort((a, b) => b.priority - a.priority);
 
-  try {
-    return await withTimeout(
-      prisma.order.findMany({
-        where: { isDeleted: true },
-        orderBy: [{ updatedAt: "desc" }],
-      }),
-      LIST_ORDERS_TIMEOUT_MS,
-      "listDeletedOrders query timed out.",
-    );
+    return orders;
   } catch (error) {
-    console.error("[trash] listDeletedOrders failed.", {
-      role: user.role,
-      label: user.label,
-      error,
-    });
+    console.error("[listPendingOrders] failed.", error);
     return [];
   }
 }
 
-export async function getOrderById(orderId: string) {
-  await requireAuth();
+export async function listDeletedOrders(): Promise<SerializedOrder[]> {
+  await requireAdmin();
+  try {
+    const snapshot = await ordersCollection()
+      .where("isDeleted", "==", true)
+      .get();
 
-  const parsedOrderId = parseActionId(orderId);
-  if (!parsedOrderId) {
+    const orders = snapshot.docs
+      .map((doc) => docToOrder(doc.id, doc.data() as OrderDoc))
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+    return orders;
+  } catch (error) {
+    console.error("[listDeletedOrders] failed.", error);
+    return [];
+  }
+}
+
+export async function getOrderById(
+  orderId: string,
+): Promise<SerializedOrder | null> {
+  await requireAuth();
+  if (!orderId) return null;
+
+  try {
+    const doc = await ordersCollection().doc(orderId).get();
+    if (!doc.exists) return null;
+    const data = doc.data() as OrderDoc;
+    if (data.isDeleted) return null;
+    return docToOrder(doc.id, data);
+  } catch {
     return null;
   }
-
-  return prisma.order.findFirst({
-    where: { id: parsedOrderId, isDeleted: false },
-  });
 }
 
-export async function listOrderActivities(
-  orderId: string,
-): Promise<OrderActivityFeedItem[]> {
-  await requireAuth();
-
-  const parsedOrderId = parseActionId(orderId);
-  if (!parsedOrderId) {
-    return [];
-  }
-
-  const activities = await prisma.orderActivity.findMany({
-    where: { orderId: parsedOrderId },
-    orderBy: [{ at: "desc" }],
-  });
-
-  return activities.map((activity) => ({
-    id: activity.id,
-    action: activity.action,
-    at: activity.at,
-    role: activity.role,
-    details: parseActivityDetails(activity.details),
-  }));
-}
-
-export async function listOrderAttachments(
-  orderId: string,
-): Promise<OrderAttachmentListItem[]> {
-  await requireAuth();
-
-  const parsedOrderId = parseActionId(orderId);
-  if (!parsedOrderId) {
-    return [];
-  }
-
-  const attachments = await prisma.orderAttachment.findMany({
-    where: { orderId: parsedOrderId },
-    orderBy: [{ createdAt: "desc" }],
-  });
-
-  return Promise.all(
-    attachments.map(async (attachment) => ({
-      ...attachment,
-      publicUrl: await resolveOrderAttachmentPublicUrl(attachment.storagePath),
-    })),
-  );
-}
-
-export async function uploadOrderAttachment(
-  orderId: string,
-  _previousState: FormActionState,
-  formData: FormData,
-): Promise<FormActionState> {
-  const actor = await requireAdmin();
-  const submittedValues = collectSubmittedValues(
-    formData,
-    ORDER_ATTACHMENT_ALLOWED_FIELDS,
-  );
-  const parsedOrderId = parseActionId(orderId);
-
-  if (!parsedOrderId) {
-    return {
-      success: null,
-      error: "Invalid order request.",
-      fieldErrors: {},
-      submittedValues,
-    };
-  }
-
-  if (hasUnexpectedFormKeys(formData, ORDER_ATTACHMENT_ALLOWED_FIELDS)) {
-    return {
-      success: null,
-      error: "Unexpected fields in request.",
-      fieldErrors: {},
-      submittedValues,
-    };
-  }
-
-  const fileValue = formData.get("attachment");
-  if (!(fileValue instanceof File) || fileValue.size === 0) {
-    return {
-      success: null,
-      error: "Please select a file to upload.",
-      fieldErrors: {
-        attachment: "Attachment file is required.",
-      },
-      submittedValues,
-    };
-  }
-
-  if (fileValue.size > ORDER_ATTACHMENT_MAX_BYTES) {
-    return {
-      success: null,
-      error: "File is too large.",
-      fieldErrors: {
-        attachment: "Attachment must be 100MB or smaller.",
-      },
-      submittedValues,
-    };
-  }
-
-  let storagePathForCleanup: string | null = null;
-
-  try {
-    const existingOrder = await prisma.order.findFirst({
-      where: { id: parsedOrderId, isDeleted: false },
-      select: { id: true },
-    });
-
-    if (!existingOrder) {
-      return {
-        success: null,
-        error: "Order not found.",
-        fieldErrors: {},
-        submittedValues,
-      };
-    }
-
-    const fileBuffer = Buffer.from(await fileValue.arrayBuffer());
-    const uploaded = await uploadOrderAttachmentObject({
-      orderId: parsedOrderId,
-      originalName: fileValue.name,
-      bytes: fileBuffer,
-      contentType: fileValue.type || null,
-    });
-    storagePathForCleanup = uploaded.storagePath;
-
-    const createdAttachment = await prisma.orderAttachment.create({
-      data: {
-        orderId: parsedOrderId,
-        originalName: fileValue.name.trim().slice(0, 200) || "attachment",
-        storagePath: uploaded.storagePath,
-        contentType: fileValue.type || null,
-        sizeBytes: fileValue.size,
-      },
-    });
-    storagePathForCleanup = null;
-
-    await createOrderActivity({
-      orderId: parsedOrderId,
-      role: actor.role,
-      action: "ORDER_ATTACHMENT_UPLOADED",
-      summary: `Attachment uploaded: ${createdAttachment.originalName}`,
-      diffs: [
-        {
-          field: "attachment",
-          from: "N/A",
-          to: createdAttachment.originalName,
-        },
-      ],
-    });
-  } catch (error) {
-    if (storagePathForCleanup) {
-      await deleteOrderAttachmentObject(storagePathForCleanup).catch(
-        () => undefined,
-      );
-    }
-
-    return {
-      success: null,
-      error: handleServerMutationError("uploadOrderAttachment", error),
-      fieldErrors: {},
-      submittedValues,
-    };
-  }
-
-  revalidatePath(`/orders/${parsedOrderId}`);
-  redirect(`/orders/${parsedOrderId}?saved=attachment-uploaded`);
-}
-
-export async function deleteOrderAttachment(
-  orderId: string,
-  attachmentId: string,
-) {
-  const actor = await requireAdmin();
-  const parsedOrderId = parseActionId(orderId);
-  const parsedAttachmentId = parseActionId(attachmentId);
-
-  if (!parsedOrderId || !parsedAttachmentId) {
-    redirect(`/orders/${orderId}?saved=attachment-not-found`);
-  }
-
-  let redirectTarget = `/orders/${parsedOrderId}?saved=attachment-deleted`;
-
-  try {
-    const existingAttachment = await prisma.orderAttachment.findFirst({
-      where: {
-        id: parsedAttachmentId,
-        orderId: parsedOrderId,
-      },
-    });
-
-    if (!existingAttachment) {
-      redirectTarget = `/orders/${parsedOrderId}?saved=attachment-not-found`;
-    } else {
-      await prisma.orderAttachment.delete({
-        where: { id: parsedAttachmentId },
-      });
-      await deleteOrderAttachmentObject(existingAttachment.storagePath).catch(
-        () => undefined,
-      );
-
-      await createOrderActivity({
-        orderId: parsedOrderId,
-        role: actor.role,
-        action: "ORDER_ATTACHMENT_DELETED",
-        summary: `Attachment removed: ${existingAttachment.originalName}`,
-        diffs: [
-          {
-            field: "attachment",
-            from: existingAttachment.originalName,
-            to: "deleted",
-          },
-        ],
-      });
-    }
-  } catch (error) {
-    handleServerMutationError("deleteOrderAttachment", error);
-    redirectTarget = `/orders/${parsedOrderId}?saved=attachment-failed`;
-  }
-
-  revalidatePath(`/orders/${parsedOrderId}`);
-  redirect(redirectTarget);
-}
+/* ------------------------------------------------------------------ */
+/*  Create order                                                       */
+/* ------------------------------------------------------------------ */
 
 export async function createOrder(
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
   const user = await requireAdmin();
-  const submittedValues = collectSubmittedValues(formData, ORDER_CREATE_ALLOWED_FIELDS);
 
-  if (hasUnexpectedFormKeys(formData, ORDER_CREATE_ALLOWED_FIELDS)) {
-    return {
-      success: null,
-      error: "Unexpected fields in request.",
-      fieldErrors: {},
-      submittedValues,
-    };
+  const title = getTrimmedString(formData.get("title"));
+  const description = getNullableTrimmedString(formData.get("description"));
+  const vendor = getNullableTrimmedString(formData.get("vendor"));
+  const orderNumber = getNullableTrimmedString(formData.get("orderNumber"));
+  const orderUrl = getNullableTrimmedString(formData.get("orderUrl"));
+  const quantityRaw = getOptionalInt(formData.get("quantity"));
+  const categoryRaw = getTrimmedString(formData.get("category"));
+  const requesterName = getTrimmedString(formData.get("requesterName"));
+  const priorityRaw = getOptionalInt(formData.get("priority"));
+  const etaDaysRaw = getOptionalInt(formData.get("etaDays"));
+  const robotRaw = getNullableTrimmedString(formData.get("robot"));
+
+  const fieldErrors: Record<string, string> = {};
+  if (!title) fieldErrors.title = "Title is required.";
+  if (!requesterName) fieldErrors.requesterName = "Requester name is required.";
+  if (!ORDER_CATEGORIES.includes(categoryRaw as OrderCategory)) {
+    fieldErrors.category = "Please select a category.";
+  }
+  if (quantityRaw !== null && (isNaN(quantityRaw) || quantityRaw < 1)) {
+    fieldErrors.quantity = "Quantity must be at least 1.";
   }
 
-  const robotRaw = getNullableTrimmedString(formData.get("robot"));
-  const parsed = OrderCreateSchema.safeParse({
-    title: getTrimmedString(formData.get("title")),
-    description: getNullableTrimmedString(formData.get("description")),
-    vendor: getNullableTrimmedString(formData.get("vendor")),
-    orderNumber: getNullableTrimmedString(formData.get("orderNumber")),
-    orderUrl: getNullableTrimmedString(formData.get("orderUrl")),
-    quantity: getOptionalInt(formData.get("quantity")),
-    category: getTrimmedString(formData.get("category")),
-    requesterName: getTrimmedString(formData.get("requesterName")),
-    priority: getOptionalInt(formData.get("priority")),
-    etaDays: getOptionalInt(formData.get("etaDays")),
-    robot: robotRaw || null,
-  });
-
-  if (!parsed.success) {
+  if (Object.keys(fieldErrors).length > 0) {
     return {
       success: null,
       error: "Please fix the highlighted fields.",
-      fieldErrors: toFieldErrors(parsed.error),
-      submittedValues,
+      fieldErrors,
+      submittedValues: {},
     };
   }
+
+  const priority = priorityRaw ?? 3;
+  const etaDays = etaDaysRaw ?? 10;
+  const robot: string | null =
+    robotRaw && ROBOTS.includes(robotRaw as Robot) ? robotRaw : null;
 
   let createdOrderId: string | null = null;
 
   try {
-    const created = await prisma.order.create({
-      data: {
-        ...parsed.data,
-        etaTargetDate: addDays(new Date(), parsed.data.etaDays),
-        status: "NEW",
-        createdByLabel: user.label,
-      },
+    const now = FieldValue.serverTimestamp();
+    const docRef = await ordersCollection().add({
+      title,
+      description,
+      requesterName,
+      vendor,
+      orderNumber,
+      orderUrl,
+      quantity: quantityRaw,
+      category: categoryRaw,
+      priority,
+      etaDays,
+      etaTargetDate: addDays(new Date(), etaDays),
+      status: "NEW",
+      isDeleted: false,
+      notesFromManu: null,
+      robot,
+      createdByLabel: user.label,
+      updatedAt: now,
     });
-
-    const createDiffs = buildDiffs(
-      {
-        title: null,
-        description: null,
-        vendor: null,
-        orderNumber: null,
-        orderUrl: null,
-        quantity: null,
-        category: null,
-        requesterName: null,
-        priority: null,
-        etaDays: null,
-        status: null,
-        isDeleted: null,
-        notesFromManu: null,
-      },
-      {
-        title: created.title,
-        description: created.description,
-        vendor: created.vendor,
-        orderNumber: created.orderNumber,
-        orderUrl: created.orderUrl,
-        quantity: created.quantity,
-        category: created.category,
-        requesterName: created.requesterName,
-        priority: created.priority,
-        etaDays: created.etaDays,
-        status: created.status,
-        isDeleted: created.isDeleted,
-        notesFromManu: created.notesFromManu,
-      },
-    );
-
-    await createOrderActivity({
-      orderId: created.id,
-      role: user.role,
-      action: "ORDER_CREATED",
-      summary: "Order created.",
-      diffs: createDiffs,
-    });
-
-    createdOrderId = created.id;
+    createdOrderId = docRef.id;
   } catch (error) {
     return {
-      success: null,
+      ...EMPTY_FORM_STATE,
       error: handleServerMutationError("createOrder", error),
-      fieldErrors: {},
-      submittedValues,
     };
   }
 
   revalidatePath("/queue");
-  revalidatePath("/orders/new");
-  if (!createdOrderId) {
-    return {
-      success: null,
-      error: "Unable to determine the new order identifier.",
-      fieldErrors: {},
-      submittedValues,
-    };
+  if (createdOrderId) {
+    revalidatePath(`/orders/${createdOrderId}`);
+    redirect(`/orders/${createdOrderId}?saved=created`);
   }
-  revalidatePath(`/orders/${createdOrderId}`);
-  redirect(`/orders/${createdOrderId}?saved=created`);
+
+  return {
+    success: "Order created.",
+    error: null,
+    fieldErrors: {},
+    submittedValues: {},
+  };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Update order fields                                                */
+/* ------------------------------------------------------------------ */
 
 export async function updateOrderRequesterFields(
   orderId: string,
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  const user = await requireAdmin();
-  const submittedValues = collectSubmittedValues(
-    formData,
-    ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS,
-  );
-  const parsedOrderId = parseActionId(orderId);
+  await requireAdmin();
+  if (!orderId) return { ...EMPTY_FORM_STATE, error: "Invalid order." };
 
-  if (!parsedOrderId) {
-    return {
-      success: null,
-      error: "Invalid order request.",
-      fieldErrors: {},
-      submittedValues,
-    };
+  const title = getTrimmedString(formData.get("title"));
+  const description = getNullableTrimmedString(formData.get("description"));
+  const vendor = getNullableTrimmedString(formData.get("vendor"));
+  const orderNumber = getNullableTrimmedString(formData.get("orderNumber"));
+  const orderUrl = getNullableTrimmedString(formData.get("orderUrl"));
+  const quantityRaw = getOptionalInt(formData.get("quantity"));
+  const categoryRaw = getTrimmedString(formData.get("category"));
+  const requesterName = getTrimmedString(formData.get("requesterName"));
+
+  const fieldErrors: Record<string, string> = {};
+  if (!title) fieldErrors.title = "Title is required.";
+  if (!requesterName) fieldErrors.requesterName = "Requester name is required.";
+  if (!ORDER_CATEGORIES.includes(categoryRaw as OrderCategory)) {
+    fieldErrors.category = "Please select a category.";
   }
 
-  if (hasUnexpectedFormKeys(formData, ORDER_REQUESTER_UPDATE_ALLOWED_FIELDS)) {
-    return {
-      success: null,
-      error: "Unexpected fields in request.",
-      fieldErrors: {},
-      submittedValues,
-    };
-  }
-
-  const parsed = parseRequesterFields(formData);
-  if (!parsed.success) {
+  if (Object.keys(fieldErrors).length > 0) {
     return {
       success: null,
       error: "Please fix the highlighted fields.",
-      fieldErrors: toFieldErrors(parsed.error),
-      submittedValues,
+      fieldErrors,
+      submittedValues: {},
     };
   }
 
   try {
-    const existing = await prisma.order.findFirst({
-      where: { id: parsedOrderId, isDeleted: false },
-    });
-    if (!existing) {
-      return {
-        success: null,
-        error: "Order not found.",
-        fieldErrors: {},
-        submittedValues,
-      };
-    }
+    const docRef = ordersCollection().doc(orderId);
+    const doc = await docRef.get();
+    if (!doc.exists) return { ...EMPTY_FORM_STATE, error: "Order not found." };
+    const existing = doc.data() as OrderDoc;
 
-    const diffs = buildDiffs(
-      existing as unknown as Record<string, unknown>,
-      parsed.data,
-    );
-
-    // Auto-flip from PENDING_ORDER → NEW when an order number is provided
-    const isFlippingToNew =
+    // Auto-flip PENDING_ORDER → NEW when order number provided
+    const isFlipping =
       existing.status === "PENDING_ORDER" &&
-      parsed.data.orderNumber != null &&
-      parsed.data.orderNumber.trim().length > 0;
+      orderNumber != null &&
+      orderNumber.trim().length > 0;
 
-    await prisma.order.update({
-      where: { id: parsedOrderId },
-      data: {
-        ...parsed.data,
-        ...(isFlippingToNew
-          ? {
-              status: "NEW",
-              etaTargetDate: addDays(new Date(), existing.etaDays),
-            }
-          : {}),
-      },
-    });
-
-    if (isFlippingToNew) {
-      diffs.push({ field: "status", from: "PENDING_ORDER", to: "NEW" });
-    }
-
-    await createOrderActivity({
-      orderId: parsedOrderId,
-      role: user.role,
-      action: "ORDER_REQUESTER_UPDATED",
-      summary: summarizeDiffs(diffs, "Requester fields saved without value changes."),
-      diffs,
+    await docRef.update({
+      title,
+      description,
+      vendor,
+      orderNumber,
+      orderUrl,
+      quantity: quantityRaw,
+      category: categoryRaw,
+      requesterName,
+      ...(isFlipping
+        ? {
+            status: "NEW",
+            etaTargetDate: addDays(new Date(), existing.etaDays),
+          }
+        : {}),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   } catch (error) {
     return {
-      success: null,
+      ...EMPTY_FORM_STATE,
       error: handleServerMutationError("updateOrderRequesterFields", error),
-      fieldErrors: {},
-      submittedValues,
     };
   }
 
   revalidatePath("/queue");
-  revalidatePath(`/orders/${parsedOrderId}`);
-  redirect(`/orders/${parsedOrderId}?saved=requester`);
+  revalidatePath(`/orders/${orderId}`);
+  redirect(`/orders/${orderId}?saved=requester`);
 }
 
 export async function updateOrderManufacturingFields(
@@ -881,136 +385,83 @@ export async function updateOrderManufacturingFields(
   _previousState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  const user = await requireAdmin();
-  const submittedValues = collectSubmittedValues(
-    formData,
-    ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS,
-  );
-  const parsedOrderId = parseActionId(orderId);
+  await requireAdmin();
+  if (!orderId) return { ...EMPTY_FORM_STATE, error: "Invalid order." };
 
-  if (!parsedOrderId) {
-    return {
-      success: null,
-      error: "Invalid order request.",
-      fieldErrors: {},
-      submittedValues,
-    };
+  const priorityRaw = getOptionalInt(formData.get("priority"));
+  const etaDaysRaw = getOptionalInt(formData.get("etaDays"));
+  const statusRaw = getTrimmedString(formData.get("status"));
+  const notesFromManu = getNullableTrimmedString(formData.get("notesFromManu"));
+  const robotRaw = getNullableTrimmedString(formData.get("robot"));
+
+  const fieldErrors: Record<string, string> = {};
+  if (!ORDER_STATUSES.includes(statusRaw as OrderStatus)) {
+    fieldErrors.status = "Invalid status.";
   }
 
-  if (
-    hasUnexpectedFormKeys(formData, ORDER_MANUFACTURING_UPDATE_ALLOWED_FIELDS)
-  ) {
-    return {
-      success: null,
-      error: "Unexpected fields in request.",
-      fieldErrors: {},
-      submittedValues,
-    };
-  }
-
-  const parsed = parseManufacturingFields(formData);
-  if (!parsed.success) {
+  if (Object.keys(fieldErrors).length > 0) {
     return {
       success: null,
       error: "Please fix the highlighted fields.",
-      fieldErrors: toFieldErrors(parsed.error),
-      submittedValues,
+      fieldErrors,
+      submittedValues: {},
     };
   }
 
+  const priority = priorityRaw ?? 3;
+  const etaDays = etaDaysRaw ?? 10;
+  const robot: string | null =
+    robotRaw && ROBOTS.includes(robotRaw as Robot) ? robotRaw : null;
+
   try {
-    const existing = await prisma.order.findFirst({
-      where: { id: parsedOrderId, isDeleted: false },
-    });
-    if (!existing) {
-      return {
-        success: null,
-        error: "Order not found.",
-        fieldErrors: {},
-        submittedValues,
-      };
-    }
-
-    const diffs = buildDiffs(
-      existing as unknown as Record<string, unknown>,
-      parsed.data,
-    );
-
-    await prisma.order.update({
-      where: { id: parsedOrderId },
-      data: {
-        ...parsed.data,
-        etaTargetDate: addDays(new Date(), parsed.data.etaDays),
-      },
-    });
-
-    await createOrderActivity({
-      orderId: parsedOrderId,
-      role: user.role,
-      action: "ORDER_MANUFACTURING_UPDATED",
-      summary: summarizeDiffs(
-        diffs,
-        "Manufacturing fields saved without value changes.",
-      ),
-      diffs,
+    await ordersCollection().doc(orderId).update({
+      priority,
+      etaDays,
+      etaTargetDate: addDays(new Date(), etaDays),
+      status: statusRaw,
+      notesFromManu,
+      robot,
+      updatedAt: FieldValue.serverTimestamp(),
     });
   } catch (error) {
     return {
-      success: null,
+      ...EMPTY_FORM_STATE,
       error: handleServerMutationError("updateOrderManufacturingFields", error),
-      fieldErrors: {},
-      submittedValues,
     };
   }
 
   revalidatePath("/queue");
-  revalidatePath(`/orders/${parsedOrderId}`);
-  redirect(`/orders/${parsedOrderId}?saved=manufacturing`);
+  revalidatePath(`/orders/${orderId}`);
+  redirect(`/orders/${orderId}?saved=manufacturing`);
 }
 
-export async function removeOrderFromList(orderId: string) {
-  const parsedOrderId = parseActionId(orderId);
-  if (!parsedOrderId) {
-    redirect("/queue?toast=order-not-found&tone=debug");
-  }
+/* ------------------------------------------------------------------ */
+/*  Soft delete / restore / permanent delete                           */
+/* ------------------------------------------------------------------ */
 
-  const actor = await requireAdmin();
-  let redirectTarget = `/queue?toast=order-removed&tone=success&undoOrderId=${parsedOrderId}`;
+export async function removeOrderFromList(orderId: string) {
+  await requireAdmin();
+  if (!orderId) redirect("/queue?toast=order-not-found&tone=debug");
+
+  let redirectTarget = `/queue?toast=order-removed&tone=success&undoOrderId=${orderId}`;
 
   try {
-    const existing = await prisma.order.findUnique({
-      where: { id: parsedOrderId },
-    });
+    const docRef = ordersCollection().doc(orderId);
+    const doc = await docRef.get();
 
-    if (!existing) {
+    if (!doc.exists) {
       redirectTarget = "/queue?toast=order-not-found&tone=debug";
-    } else if (existing.isDeleted) {
-      redirectTarget = "/queue?toast=already-removed&tone=debug";
     } else {
-      const nextStatus = "CANCELLED";
-      const diffs = buildDiffs(
-        { status: existing.status, isDeleted: existing.isDeleted },
-        { status: nextStatus, isDeleted: true },
-      );
-
-      await prisma.order.update({
-        where: { id: parsedOrderId },
-        data: {
-          status: nextStatus,
+      const data = doc.data() as OrderDoc;
+      if (data.isDeleted) {
+        redirectTarget = "/queue?toast=already-removed&tone=debug";
+      } else {
+        await docRef.update({
+          status: "CANCELLED",
           isDeleted: true,
-        },
-      });
-
-      await createOrderActivity({
-        orderId: parsedOrderId,
-        role: actor.role,
-        action: "ORDER_SOFT_DELETED",
-        summary: summarizeDiffs(
-          diffs,
-          "Order moved to trash.",
-        ),
-        diffs,
-      });
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
     }
   } catch (error) {
     handleServerMutationError("removeOrderFromList", error);
@@ -1018,53 +469,33 @@ export async function removeOrderFromList(orderId: string) {
   }
 
   revalidatePath("/queue");
-  revalidatePath(`/orders/${parsedOrderId}`);
+  revalidatePath(`/orders/${orderId}`);
   redirect(redirectTarget);
 }
 
 export async function restoreOrderFromTrash(
   orderId: string,
-  returnTo: OrderListRedirectTarget = "queue",
+  returnTo: string = "queue",
 ) {
-  const parsedOrderId = parseActionId(orderId);
-  const targetPath = orderListPath(returnTo);
-  if (!parsedOrderId) {
-    redirect(`${targetPath}?toast=order-not-found&tone=debug`);
-  }
+  await requireAdmin();
+  const targetPath = returnTo === "trash" ? "/trash" : "/queue";
+  if (!orderId) redirect(`${targetPath}?toast=order-not-found&tone=debug`);
 
-  const actor = await requireAdmin();
   let redirectTarget = `${targetPath}?toast=order-restored&tone=success`;
 
   try {
-    const existing = await prisma.order.findUnique({
-      where: { id: parsedOrderId },
-      select: { status: true, isDeleted: true },
-    });
+    const docRef = ordersCollection().doc(orderId);
+    const doc = await docRef.get();
 
-    if (!existing || !existing.isDeleted) {
+    if (!doc.exists || !(doc.data() as OrderDoc).isDeleted) {
       redirectTarget = `${targetPath}?toast=order-not-found&tone=debug`;
     } else {
-      const nextStatus =
-        existing.status === "CANCELLED" ? "NEW" : existing.status;
-      const diffs = buildDiffs(
-        { status: existing.status, isDeleted: existing.isDeleted },
-        { status: nextStatus, isDeleted: false },
-      );
-
-      await prisma.order.update({
-        where: { id: parsedOrderId },
-        data: {
-          isDeleted: false,
-          status: nextStatus,
-        },
-      });
-
-      await createOrderActivity({
-        orderId: parsedOrderId,
-        role: actor.role,
-        action: "ORDER_RESTORED",
-        summary: summarizeDiffs(diffs, "Order restored from trash."),
-        diffs,
+      const data = doc.data() as OrderDoc;
+      const nextStatus = data.status === "CANCELLED" ? "NEW" : data.status;
+      await docRef.update({
+        isDeleted: false,
+        status: nextStatus,
+        updatedAt: FieldValue.serverTimestamp(),
       });
     }
   } catch (error) {
@@ -1074,48 +505,28 @@ export async function restoreOrderFromTrash(
 
   revalidatePath("/queue");
   revalidatePath("/trash");
-  revalidatePath(`/orders/${parsedOrderId}`);
+  revalidatePath(`/orders/${orderId}`);
   redirect(redirectTarget);
 }
 
 export async function permanentlyDeleteOrder(
   orderId: string,
-  returnTo: OrderListRedirectTarget = "queue",
+  returnTo: string = "queue",
 ) {
-  const parsedOrderId = parseActionId(orderId);
-  const targetPath = orderListPath(returnTo);
-  if (!parsedOrderId) {
-    redirect(`${targetPath}?toast=order-not-found&tone=debug`);
-  }
+  await requireAdmin();
+  const targetPath = returnTo === "trash" ? "/trash" : "/queue";
+  if (!orderId) redirect(`${targetPath}?toast=order-not-found&tone=debug`);
 
-  const actor = await requireAdmin();
   let redirectTarget = `${targetPath}?toast=order-permanently-deleted&tone=success`;
 
   try {
-    const existing = await prisma.order.findUnique({
-      where: { id: parsedOrderId },
-    });
+    const docRef = ordersCollection().doc(orderId);
+    const doc = await docRef.get();
 
-    if (!existing || !existing.isDeleted) {
+    if (!doc.exists || !(doc.data() as OrderDoc).isDeleted) {
       redirectTarget = `${targetPath}?toast=order-not-found&tone=debug`;
     } else {
-      await createOrderActivity({
-        orderId: null,
-        role: actor.role,
-        action: "ORDER_PERMANENTLY_DELETED",
-        summary: "Order permanently deleted.",
-        diffs: [
-          {
-            field: "orderId",
-            from: parsedOrderId,
-            to: "deleted",
-          },
-        ],
-      });
-
-      await prisma.order.delete({
-        where: { id: parsedOrderId },
-      });
+      await docRef.delete();
     }
   } catch (error) {
     handleServerMutationError("permanentlyDeleteOrder", error);
@@ -1125,4 +536,34 @@ export async function permanentlyDeleteOrder(
   revalidatePath("/queue");
   revalidatePath("/trash");
   redirect(redirectTarget);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Stubs — features not yet migrated                                  */
+/* ------------------------------------------------------------------ */
+
+export async function listOrderActivities(_orderId: string) {
+  await requireAuth();
+  return [];
+}
+
+export async function listOrderAttachments(_orderId: string) {
+  await requireAuth();
+  return [];
+}
+
+export async function uploadOrderAttachment(
+  _orderId: string,
+  _prev: FormActionState,
+  _formData: FormData,
+): Promise<FormActionState> {
+  await requireAdmin();
+  return { ...EMPTY_FORM_STATE, error: "Attachments are being migrated." };
+}
+
+export async function deleteOrderAttachment(
+  _orderId: string,
+  _attachmentId: string,
+) {
+  await requireAdmin();
 }

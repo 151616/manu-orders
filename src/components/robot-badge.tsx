@@ -2,7 +2,7 @@ import { ROBOT_LABELS, type Robot } from "@/lib/order-domain";
 
 const robotClassMap: Record<Robot, string> = {
   LAMBDA: "bg-zinc-900 text-white ring-zinc-700 dark:bg-white dark:text-black dark:ring-white/60",
-  GAMMA:  "bg-zinc-500 text-white ring-zinc-400 dark:bg-white/50 dark:text-black dark:ring-white/30",
+  GAMMA:  "bg-zinc-900 text-white ring-zinc-700 dark:bg-white dark:text-black dark:ring-white/60",
 };
 
 type RobotBadgeProps = {

@@ -1,173 +1,89 @@
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const MAX_FAILED_ATTEMPTS_PER_SCOPE_IP = 8;
-const RATE_LIMIT_QUERY_TIMEOUT_MS = 2000;
+/**
+ * Simple in-memory rate limiter.
+ * Resets on server restart — good enough for a small team app.
+ * No Prisma / DB dependency.
+ */
 
-export const AUTH_ATTEMPT_SCOPES = [
-  "login",
-  "vendor_capture",
-] as const;
-export type AuthAttemptScope = (typeof AUTH_ATTEMPT_SCOPES)[number];
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_FAILED_ATTEMPTS = 8;
 
-function logRateLimitDebug(event: string, details?: Record<string, unknown>) {
-  const timestamp = new Date().toISOString();
-  if (details) {
-    console.warn(`[Auth RateLimit] ${timestamp} ${event}`, details);
-    return;
-  }
-  console.warn(`[Auth RateLimit] ${timestamp} ${event}`);
-}
+type AttemptRecord = { count: number; windowStart: number };
+const store = new Map<string, AttemptRecord>();
 
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  timeoutErrorMessage: string,
-): Promise<T> {
-  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutHandle = setTimeout(() => {
-      reject(new Error(timeoutErrorMessage));
-    }, timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutHandle) {
-      clearTimeout(timeoutHandle);
-    }
-  }
+function getKey(scope: string, ip: string) {
+  return `${scope}:${ip}`;
 }
 
 export async function getRequestIpAddress(): Promise<string> {
   const headerStore = await headers();
   const forwardedFor = headerStore.get("x-forwarded-for");
   const realIp = headerStore.get("x-real-ip");
-
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() || "unknown";
-  }
-
-  if (realIp) {
-    return realIp.trim();
-  }
-
+  if (forwardedFor) return forwardedFor.split(",")[0]?.trim() || "unknown";
+  if (realIp) return realIp.trim();
   return "unknown";
 }
 
+export function isRateLimited(scope: string, ipAddress: string): boolean {
+  const key = getKey(scope, ipAddress);
+  const record = store.get(key);
+  if (!record) return false;
+
+  if (Date.now() - record.windowStart > RATE_LIMIT_WINDOW_MS) {
+    store.delete(key);
+    return false;
+  }
+
+  return record.count >= MAX_FAILED_ATTEMPTS;
+}
+
+export function recordFailedAttempt(scope: string, ipAddress: string): void {
+  const key = getKey(scope, ipAddress);
+  const existing = store.get(key);
+  const now = Date.now();
+
+  if (!existing || now - existing.windowStart > RATE_LIMIT_WINDOW_MS) {
+    store.set(key, { count: 1, windowStart: now });
+  } else {
+    existing.count += 1;
+  }
+}
+
+export function clearAttempts(scope: string, ipAddress: string): void {
+  store.delete(getKey(scope, ipAddress));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Backwards-compatible exports (used by vendor-capture, etc.)       */
+/* ------------------------------------------------------------------ */
+
 export function normalizeLoginEmail(email: string): string {
-  const normalized = email.trim().toLowerCase();
-  return normalized.length > 0 ? normalized : "<invalid-email>";
+  return email.trim().toLowerCase() || "<invalid>";
 }
 
 export async function isAuthAttemptRateLimited({
   scope,
   ipAddress,
 }: {
-  scope: AuthAttemptScope;
+  scope: string;
   ipAddress: string;
 }): Promise<boolean> {
-  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
-  const startedAt = Date.now();
-
-  try {
-    const ipFailuresForScope = await withTimeout(
-      prisma.loginAttempt.count({
-        where: {
-          success: false,
-          scope,
-          ipAddress,
-          createdAt: { gte: windowStart },
-        },
-      }),
-      RATE_LIMIT_QUERY_TIMEOUT_MS,
-      "Rate-limit count timed out.",
-    );
-
-    return ipFailuresForScope >= MAX_FAILED_ATTEMPTS_PER_SCOPE_IP;
-  } catch (error) {
-    logRateLimitDebug("count-failed-fail-open", {
-      scope,
-      ipAddress,
-      elapsedMs: Date.now() - startedAt,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return false;
-  }
+  return isRateLimited(scope, ipAddress);
 }
 
 export async function recordAuthAttempt({
   scope,
-  key,
+  key: _key,
   ipAddress,
   success,
 }: {
-  scope: AuthAttemptScope;
+  scope: string;
   key: string;
   ipAddress: string;
   success: boolean;
-}) {
-  const startedAt = Date.now();
-  try {
-    const writePromise = prisma.loginAttempt.create({
-      data: {
-        scope,
-        email: key,
-        ipAddress,
-        success,
-      },
-    });
-
-    void withTimeout(
-      writePromise,
-      RATE_LIMIT_QUERY_TIMEOUT_MS,
-      "Rate-limit write timed out.",
-    ).catch((error) => {
-      logRateLimitDebug("write-failed-skip", {
-        scope,
-        ipAddress,
-        success,
-        elapsedMs: Date.now() - startedAt,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
-  } catch (error) {
-    logRateLimitDebug("write-failed-skip", {
-      scope,
-      ipAddress,
-      success,
-      elapsedMs: Date.now() - startedAt,
-      error: error instanceof Error ? error.message : String(error),
-    });
+}): Promise<void> {
+  if (!success) {
+    recordFailedAttempt(scope, ipAddress);
   }
-}
-
-export async function isLoginRateLimited({
-  ipAddress,
-}: {
-  ipAddress: string;
-}) {
-  return isAuthAttemptRateLimited({
-    scope: "login",
-    ipAddress,
-  });
-}
-
-export async function recordLoginAttempt({
-  email,
-  ipAddress,
-  success,
-}: {
-  email: string;
-  ipAddress: string;
-  success: boolean;
-}) {
-  await recordAuthAttempt({
-    scope: "login",
-    key: email,
-    ipAddress,
-    success,
-  });
 }
